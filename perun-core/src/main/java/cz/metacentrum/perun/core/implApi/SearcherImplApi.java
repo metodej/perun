@@ -12,7 +12,6 @@ import cz.metacentrum.perun.core.api.exceptions.InternalErrorException;
 import cz.metacentrum.perun.core.api.exceptions.WrongAttributeAssignmentException;
 
 import java.time.LocalDate;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
@@ -59,7 +58,7 @@ public interface SearcherImplApi {
 	 * @return Members with expiration relative to method params.
 	 * @throws InternalErrorException
 	 */
-	List<Member> getMembersByExpiration(PerunSession sess, String operator, Calendar date, int days) throws InternalErrorException;
+	List<Member> getMembersByExpiration(PerunSession sess, String operator, LocalDate date, int days) throws InternalErrorException;
 
 	/**
 	 * Return members who should expire in given group and with expiration date set,

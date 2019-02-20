@@ -34,7 +34,6 @@ import javax.sql.DataSource;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -130,10 +129,10 @@ public class ExpirationNotifScheduler {
 	 * @param allowedStatuses members that has one of this statuses will be checked
 	 * @param vosMap map containing all Vos from perun
 	 * @param timeBeforeExpiration time used for check
-	 * @param expirationPeriod Expiration period, should correspond with given Calendar
+	 * @param expirationPeriod Expiration period, should correspond with given date
 	 * @throws InternalErrorException internal error
 	 */
-	private void auditInfoAboutIncomingMembersExpirationInGivenTime(List<Status> allowedStatuses, Map<Integer, Vo> vosMap, Calendar timeBeforeExpiration, ExpirationPeriod expirationPeriod) throws InternalErrorException {
+	private void auditInfoAboutIncomingMembersExpirationInGivenTime(List<Status> allowedStatuses, Map<Integer, Vo> vosMap, LocalDate timeBeforeExpiration, ExpirationPeriod expirationPeriod) throws InternalErrorException {
 		List<Member> expireInTime = perun.getSearcherBl().getMembersByExpiration(sess, "=", timeBeforeExpiration);
 		for (Member m : expireInTime) {
 			try {
@@ -230,7 +229,7 @@ public class ExpirationNotifScheduler {
 
 		auditOldExpirations(allowedStatuses, vosMap);
 
-		Calendar today = Calendar.getInstance();
+		LocalDate today = LocalDate.now();
 		expireMembers(today);
 		validateMembers(today);
 	}
@@ -243,7 +242,7 @@ public class ExpirationNotifScheduler {
 	 * @throws WrongAttributeAssignmentException error
 	 * @throws AttributeNotExistsException error
 	 */
-	private void validateMembers(Calendar date) throws InternalErrorException, WrongAttributeAssignmentException, AttributeNotExistsException {
+	private void validateMembers(LocalDate date) throws InternalErrorException, WrongAttributeAssignmentException, AttributeNotExistsException {
 		List<Member> shouldntBeExpired = perun.getSearcherBl().getMembersByExpiration(sess, ">", date);
 		for (Member member : shouldntBeExpired) {
 			if (member.getStatus().equals(Status.EXPIRED)) {
@@ -264,7 +263,7 @@ public class ExpirationNotifScheduler {
 	 * @throws WrongAttributeAssignmentException error
 	 * @throws AttributeNotExistsException error
 	 */
-	private void expireMembers(Calendar date) throws InternalErrorException, WrongAttributeAssignmentException, AttributeNotExistsException {
+	private void expireMembers(LocalDate date) throws InternalErrorException, WrongAttributeAssignmentException, AttributeNotExistsException {
 		List<Member> shouldBeExpired = perun.getSearcherBl().getMembersByExpiration(sess, "<=", date);
 		for (Member member : shouldBeExpired) {
 			if (member.getStatus().equals(Status.VALID)) {
@@ -287,8 +286,8 @@ public class ExpirationNotifScheduler {
 	 */
 	private void auditOldExpirations(List<Status> allowedStatuses, Map<Integer, Vo> vosMap) throws InternalErrorException {
 		// log message for all members which expired 7 days ago
-		Calendar expiredWeekAgo = Calendar.getInstance();
-		expiredWeekAgo.add(Calendar.DAY_OF_MONTH, -7);
+		LocalDate expiredWeekAgo = LocalDate.now();
+		expiredWeekAgo = expiredWeekAgo.minusDays(7);
 		List<Member> expired7DaysAgo = perun.getSearcherBl().getMembersByExpiration(sess, "=", expiredWeekAgo);
 		// include expired in this case
 		allowedStatuses.add(Status.EXPIRED);
@@ -315,25 +314,25 @@ public class ExpirationNotifScheduler {
 	 * @throws InternalErrorException internal error
 	 */
 	private void auditIncomingExpirations(List<Status> allowedStatuses, Map<Integer, Vo> vosMap) throws InternalErrorException {
-		Calendar monthBefore = Calendar.getInstance();
-		monthBefore.add(Calendar.MONTH, 1);
+		LocalDate monthBefore = LocalDate.now();
+		monthBefore = monthBefore.plusMonths(1);
 
 		// log message for all members which will expire in 30 days
 		auditInfoAboutIncomingMembersExpirationInGivenTime(allowedStatuses, vosMap, monthBefore, ExpirationPeriod.MONTH);
 
 		// log message for all members which will expire in 14 days
-		Calendar expireInA14Days = Calendar.getInstance();
-		expireInA14Days.add(Calendar.DAY_OF_MONTH, 14);
+		LocalDate expireInA14Days = LocalDate.now();
+		expireInA14Days = expireInA14Days.plusDays(14);
 		auditInfoAboutIncomingMembersExpirationInGivenTime(allowedStatuses, vosMap, expireInA14Days, ExpirationPeriod.DAYS_14);
 
 		// log message for all members which will expire in 7 days
-		Calendar expireInA7Days = Calendar.getInstance();
-		expireInA7Days.add(Calendar.DAY_OF_MONTH, 7);
+		LocalDate expireInA7Days = LocalDate.now();
+		expireInA7Days = expireInA7Days.plusDays(7);
 		auditInfoAboutIncomingMembersExpirationInGivenTime(allowedStatuses, vosMap, expireInA7Days, ExpirationPeriod.DAYS_7);
 
 		// log message for all members which will expire tomorrow
-		Calendar expireInADay = Calendar.getInstance();
-		expireInADay.add(Calendar.DAY_OF_MONTH, 1);
+		LocalDate expireInADay = LocalDate.now();
+		expireInADay = expireInADay.plusDays(1);
 		auditInfoAboutIncomingMembersExpirationInGivenTime(allowedStatuses, vosMap, expireInADay, ExpirationPeriod.DAYS_1);
 	}
 
