@@ -31,6 +31,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcPerunTemplate;
 
 import javax.sql.DataSource;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -340,11 +341,11 @@ public class ExpirationNotifScheduler {
 	 * Finds members in given group and if they expire on given date and they have
 	 * VALID MemberGroupState, switch them to EXPIRED
 	 * @param group given date
-	 * @param calendar current date
+	 * @param date current date
 	 * @throws InternalErrorException internal error
 	 */
-	private void checkGroupMemberExpiration(Group group, Calendar calendar) throws InternalErrorException {
-		List<Member> shouldBeExpired = perun.getSearcherBl().getMembersByGroupExpiration(sess, group, "<=", calendar);
+	private void checkGroupMemberExpiration(Group group, LocalDate date) throws InternalErrorException {
+		List<Member> shouldBeExpired = perun.getSearcherBl().getMembersByGroupExpiration(sess, group, "<=", date);
 		shouldBeExpired.stream()
 				//read members current group status
 				.filter(member -> {
@@ -374,11 +375,11 @@ public class ExpirationNotifScheduler {
 	 * switch them to VALID state in given group
 	 *
 	 * @param group group where members are searched
-	 * @param calendar current date
+	 * @param date current date
 	 * @throws InternalErrorException internal error
 	 */
-	private void checkGroupMemberValidation(Group group, Calendar calendar) throws InternalErrorException {
-		List<Member> shouldNotBeExpired = perun.getSearcherBl().getMembersByGroupExpiration(sess, group, ">", calendar);
+	private void checkGroupMemberValidation(Group group, LocalDate date) throws InternalErrorException {
+		List<Member> shouldNotBeExpired = perun.getSearcherBl().getMembersByGroupExpiration(sess, group, ">", date);
 		shouldNotBeExpired.stream()
 				//read members current group status
 				.filter(member -> {
@@ -417,7 +418,7 @@ public class ExpirationNotifScheduler {
 			allGroups.addAll(perun.getGroupsManagerBl().getGroups(sess, vo));
 		}
 
-		Calendar today = Calendar.getInstance();
+		LocalDate today = LocalDate.now();
 
 		// remove member groups
 		allGroups = allGroups.stream()

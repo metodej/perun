@@ -11,6 +11,7 @@ import cz.metacentrum.perun.core.api.User;
 import cz.metacentrum.perun.core.api.exceptions.InternalErrorException;
 import cz.metacentrum.perun.core.implApi.SearcherImplApi;
 
+import java.time.LocalDate;
 import java.util.*;
 
 import javax.sql.DataSource;
@@ -254,16 +255,15 @@ public class SearcherImpl implements SearcherImplApi {
 	}
 
 	@Override
-	public List<Member> getMembersByGroupExpiration(PerunSession sess, Group group, String operator, Calendar date, int days) throws InternalErrorException {
+	public List<Member> getMembersByGroupExpiration(PerunSession sess, Group group, String operator, LocalDate date, int days) throws InternalErrorException {
 
 		// if date is null, use today
 		if (date == null) {
-			date = Calendar.getInstance();
+			date = LocalDate.now();
 		}
-		date.add(Calendar.DAY_OF_MONTH, days);
+		date = date.plusDays(days);
 		// create sql toDate()
-		String compareDate = BeansUtils.getDateFormatterWithoutTime().format(date.getTime());
-		compareDate = "TO_DATE('"+compareDate+"','YYYY-MM-DD')";
+		String compareDate = "TO_DATE('"+date.toString()+"','YYYY-MM-DD')";
 
 		if (operator == null || operator.isEmpty()) {
 			operator = "=";

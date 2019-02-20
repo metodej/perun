@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.time.LocalDate;
 import java.util.*;
 
 import cz.metacentrum.perun.core.api.*;
@@ -257,10 +258,10 @@ public class SearcherEntryIntegrationTest extends AbstractPerunIntegrationTest {
 		}
 
 		// setup expiration dates
-		Calendar calendar = Calendar.getInstance();
-		String today = BeansUtils.getDateFormatterWithoutTime().format(calendar.getTime());
-		calendar.add(Calendar.DAY_OF_MONTH, -1);
-		String yesterday = BeansUtils.getDateFormatterWithoutTime().format(calendar.getTime());
+		LocalDate date = LocalDate.now();
+		String today = date.toString();
+		date = date.minusDays(1);
+		String yesterday = date.toString();
 
 		// set attributes
 		Attribute attribute = new Attribute(perun.getAttributesManager().getAttributeDefinition(sess, "urn:perun:member_group:attribute-def:def:membershipExpiration"));
@@ -271,12 +272,12 @@ public class SearcherEntryIntegrationTest extends AbstractPerunIntegrationTest {
 		attribute2.setValue(yesterday);
 		perun.getAttributesManager().setAttribute(sess, member2, group, attribute2);
 
-		assertTrue("Member with expiration yesterday was not found for = yesterday.", perun.getSearcher().getMembersByGroupExpiration(sess, group, "=", calendar).contains(member2));
-		assertTrue("Member with expiration today was not found for > yesterday.", perun.getSearcher().getMembersByGroupExpiration(sess, group, ">", calendar).contains(member1));
-		assertTrue("Member with expiration today was not found for >= yesterday.", perun.getSearcher().getMembersByGroupExpiration(sess, group, ">=", calendar).contains(member1));
-		assertTrue("Member with expiration yesterday was not found for >= yesterday.", perun.getSearcher().getMembersByGroupExpiration(sess, group, ">=", calendar).contains(member2));
-		assertTrue("Member with expiration today was found for = yesterday.", !perun.getSearcher().getMembersByGroupExpiration(sess, group, "=", calendar).contains(member1));
-		assertTrue("Member with expiration yesterday was found for > yesterday.", !perun.getSearcher().getMembersByGroupExpiration(sess, group, ">", calendar).contains(member2));
+		assertTrue("Member with expiration yesterday was not found for = yesterday.", perun.getSearcher().getMembersByGroupExpiration(sess, group, "=", date).contains(member2));
+		assertTrue("Member with expiration today was not found for > yesterday.", perun.getSearcher().getMembersByGroupExpiration(sess, group, ">", date).contains(member1));
+		assertTrue("Member with expiration today was not found for >= yesterday.", perun.getSearcher().getMembersByGroupExpiration(sess, group, ">=", date).contains(member1));
+		assertTrue("Member with expiration yesterday was not found for >= yesterday.", perun.getSearcher().getMembersByGroupExpiration(sess, group, ">=", date).contains(member2));
+		assertTrue("Member with expiration today was found for = yesterday.", !perun.getSearcher().getMembersByGroupExpiration(sess, group, "=", date).contains(member1));
+		assertTrue("Member with expiration yesterday was found for > yesterday.", !perun.getSearcher().getMembersByGroupExpiration(sess, group, ">", date).contains(member2));
 	}
 
 	@Test
