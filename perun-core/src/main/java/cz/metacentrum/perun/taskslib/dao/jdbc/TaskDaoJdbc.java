@@ -3,6 +3,8 @@ package cz.metacentrum.perun.taskslib.dao.jdbc;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,6 +53,18 @@ public class TaskDaoJdbc extends JdbcDaoSupport implements TaskDao {
 		return df;
 	}
 
+	/**
+	 * Method create formatter with default settings for perun timestamps and set ResolverStyle to STRICT
+	 * Timestamp format:  "dd-MM-yyyy HH:mm:ss" - "ex. 01-01-2014 10:10:10"
+	 *
+	 * ResolverStyle.STRICT means that formatter will be more strict to creating timestamp from string
+	 *
+	 * @return date formatter
+	 */
+	public static DateTimeFormatter getDateTimeFormatter() {
+		return DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss").withResolverStyle(ResolverStyle.STRICT);
+	}
+
 	public final static String taskMappingSelectQuery = " tasks.id as tasks_id, tasks.schedule as tasks_schedule, tasks.recurrence as tasks_recurrence, " +
 		"tasks.delay as tasks_delay, tasks.status as tasks_status, tasks.start_time as tasks_start_time, tasks.end_time as tasks_end_time, tasks.engine_id as tasks_engine_id ";
 
@@ -65,13 +79,13 @@ public class TaskDaoJdbc extends JdbcDaoSupport implements TaskDao {
 			task.setRecurrence(rs.getInt("tasks_recurrence"));
 
 			if (rs.getTimestamp("tasks_start_time") != null) {
-				task.setStartTime(rs.getTimestamp("tasks_start_time"));
+				task.setStartTime(rs.getTimestamp("tasks_start_time").toLocalDateTime());
 			}
 			if (rs.getTimestamp("tasks_schedule") != null) {
-				task.setSchedule(rs.getTimestamp("tasks_schedule"));
+				task.setSchedule(rs.getTimestamp("tasks_schedule").toLocalDateTime());
 			}
 			if (rs.getTimestamp("tasks_end_time") != null) {
-				task.setEndTime(rs.getTimestamp("tasks_end_time"));
+				task.setEndTime(rs.getTimestamp("tasks_end_time").toLocalDateTime());
 			}
 
 			if (rs.getString("tasks_status").equalsIgnoreCase(TaskStatus.WAITING.toString())) {

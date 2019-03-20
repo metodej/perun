@@ -19,8 +19,8 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 
 @Transactional
@@ -197,10 +197,7 @@ public class TaskResultDaoJdbc extends JdbcDaoSupport implements TaskResultDao {
 	@Override
 	public int clearOld(int engineID, int numDays) throws InternalErrorException {
 
-		// create sql toDate() with numDay substracted from now
-		Calendar date = Calendar.getInstance();
-		date.add(Calendar.DAY_OF_MONTH, -numDays);
-		String compareDate = TaskDaoJdbc.getDateFormatter().format(date.getTime());
+		String compareDate = LocalDateTime.now().minusDays(numDays).format(TaskDaoJdbc.getDateTimeFormatter());
 
 		return this.getJdbcTemplate().update("delete from tasks_results where engine_id = ? and " +
 				"id in (" +
