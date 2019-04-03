@@ -24,7 +24,7 @@ public class urn_perun_user_attribute_def_def_mailaliasesGenericMail extends Use
 
 	@Override
 	public void checkAttributeValue(PerunSessionImpl sess, User user, Attribute attribute) throws InternalErrorException, WrongAttributeValueException, WrongAttributeAssignmentException, WrongReferenceAttributeValueException {
-		String attributeValue = null;
+		String attributeValue;
 
 		if(attribute.getValue() == null) return;
 		else attributeValue = (String) attribute.getValue();

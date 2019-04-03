@@ -148,7 +148,7 @@ public class Auditer {
 		String msg;
 		if (Compatibility.isOracle()) {
 			Clob clob = resultSet.getClob("msg");
-			char[] cbuf = null;
+			char[] cbuf;
 			if (clob == null) {
 				msg = null;
 			} else {
@@ -791,7 +791,7 @@ public class Auditer {
 	}
 
 	public Map<String, Integer> getAllAuditerConsumers(PerunSession sess) throws InternalErrorException {
-		Map<String, Integer> auditerConsumers = new HashMap<>();
+		Map<String, Integer> auditerConsumers;
 
 		try {
 			auditerConsumers = jdbc.query("select name, last_processed_id from auditer_consumers", AUDITER_CONSUMER_EXTRACTOR);

@@ -65,7 +65,7 @@ public class urn_perun_group_resource_attribute_def_def_freeipaGroupName extends
 
 			//For all groups get name and check uniqueness
 			for(Group gr : resourceGroups){
-				Attribute freeipaGroupNameAttribute = new Attribute();
+				Attribute freeipaGroupNameAttribute;
 
 				try{
 					freeipaGroupNameAttribute = sess.getPerunBl().getAttributesManagerBl().getAttribute(sess, rs, gr, A_GR_freeipaGroupName);

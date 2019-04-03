@@ -435,7 +435,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 				if (Compatibility.isOracle()) {
 					//large attributes
 					Clob clob = rs.getClob("attr_value_text");
-					char[] cbuf = null;
+					char[] cbuf;
 					if(clob == null) {
 						stringValue = null;
 					} else {

@@ -24,7 +24,7 @@ public class urn_perun_user_attribute_def_def_preferredMail extends UserAttribut
 
 	@Override
 	public void checkAttributeValue(PerunSessionImpl sess, User user, Attribute attribute) throws InternalErrorException, WrongAttributeValueException, WrongAttributeAssignmentException, WrongReferenceAttributeValueException {
-		String attributeValue = null;
+		String attributeValue;
 
 		if(attribute.getValue() == null) throw new WrongAttributeValueException(attribute, user, "User preferred mail can't be set to null.");
 		else attributeValue = (String) attribute.getValue();

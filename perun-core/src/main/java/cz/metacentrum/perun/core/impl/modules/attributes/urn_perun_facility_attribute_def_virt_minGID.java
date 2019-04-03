@@ -53,7 +53,7 @@ public class urn_perun_facility_attribute_def_virt_minGID extends FacilityVirtua
 			Attribute gidNamespaceAttribute = getUnixGIDNamespaceAttribute(sess, facility);
 			if(gidNamespaceAttribute.getValue() == null) return attribute;
 			Attribute namespaceMinGidAttribute = getNamespaceMinGidAttribute(sess, (String) gidNamespaceAttribute.getValue());
-			attribute = Utils.copyAttributeToVirtualAttributeWithValue(namespaceMinGidAttribute, attribute);
+			Utils.copyAttributeToVirtualAttributeWithValue(namespaceMinGidAttribute, attribute);
 			return attribute;
 		} catch(WrongReferenceAttributeValueException ex) {
 			return attribute;

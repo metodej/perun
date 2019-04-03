@@ -675,7 +675,7 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 
 		// check if moving group is null
 		if (movingGroup == null) {
-			throw new GroupMoveNotAllowedException("Moving group: " + movingGroup + " cannot be null.", movingGroup, destinationGroup);
+			throw new GroupMoveNotAllowedException("Moving group: cannot be null.", null, destinationGroup);
 		}
 
 		// check if moving group is members group
@@ -750,7 +750,7 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 
 			// check if moving group is already top level group
 			if (movingGroup.getParentGroupId() == null) {
-				throw new GroupMoveNotAllowedException("Moving group: " + movingGroup + " is already top level group.", movingGroup, destinationGroup);
+				throw new GroupMoveNotAllowedException("Moving group: " + movingGroup + " is already top level group.", movingGroup, null);
 			}
 
 			List<Group> destinationGroupSubGroups = getGroups(sess, getVo(sess, movingGroup));
@@ -758,11 +758,11 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 			// check if there is top level group with same short name as Moving group short name
 			for (Group group: destinationGroupSubGroups) {
 				if(movingGroup.getShortName().equals(group.getName())){
-					throw new GroupMoveNotAllowedException("There is already top level group with the same name as moving group: " + movingGroup + ".", movingGroup, destinationGroup);
+					throw new GroupMoveNotAllowedException("There is already top level group with the same name as moving group: " + movingGroup + ".", movingGroup, null);
 				}
 			}
 
-			processRelationsWhileMovingGroup(sess, destinationGroup, movingGroup);
+			processRelationsWhileMovingGroup(sess, null, movingGroup);
 
 			// We have to set group attributes so we can update it in database
 			movingGroup.setParentGroupId(null);
@@ -1827,7 +1827,7 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 				boolean failedDueToException = false;
 
 				//Take another group from the pool to synchronize it
-				Group group = null;
+				Group group;
 				try {
 					group = poolOfGroupsToBeSynchronized.takeJob();
 				} catch (InterruptedException ex) {
@@ -2135,7 +2135,7 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 			for(Resource resourceElement: resourcesFromFacility) {
 				groups.addAll(getPerunBl().getGroupsManagerBl().getAssignedGroupsToResource(sess, resourceElement));
 			}
-		} else if(vo != null) {
+		} else {
 			groups.addAll(getPerunBl().getGroupsManagerBl().getAllGroups(sess, vo));
 		}
 
@@ -2610,7 +2610,7 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 	private ExtSource getGroupMembersExtSourceForSynchronization(PerunSession sess, Group group, ExtSource defaultSource) throws InternalErrorException, WrongAttributeAssignmentException, AttributeNotExistsException, ExtSourceNotExistsException {
 		//Prepare the groupMembersExtSource if it is set
 		Attribute membersExtSourceNameAttr = getPerunBl().getAttributesManagerBl().getAttribute(sess, group, GroupsManager.GROUPMEMBERSEXTSOURCE_ATTRNAME);
-		ExtSource membersSource = null;
+		ExtSource membersSource;
 		// If the different extSource name for the members was set use it
 		if (membersExtSourceNameAttr != null && membersExtSourceNameAttr.getValue() != null) {
 			String membersExtSourceName = (String) membersExtSourceNameAttr.getValue();
@@ -2961,7 +2961,7 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 								userAttribute.setValue(subjectAttributeValue);
 								try {
 									//Choose set or merge by extSource attribute overwriteUserAttributes (if contains this one)
-									if(overwriteUserAttributesList.contains(userAttribute.getName())) {
+									if(overwriteUserAttributesList != null && overwriteUserAttributesList.contains(userAttribute.getName())) {
 										getPerunBl().getAttributesManagerBl().setAttributeInNestedTransaction(sess, richMember.getUser(), userAttribute);
 									} else {
 										getPerunBl().getAttributesManagerBl().mergeAttributeValueInNestedTransaction(sess, richMember.getUser(), userAttribute);
@@ -3085,7 +3085,7 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 	private void addMissingMembersWhileSynchronization(PerunSession sess, Group group, List<Candidate> candidatesToAdd, List<String> overwriteUserAttributesList, List<String> mergeMemberAttributesList, List<String> skippedMembers) throws InternalErrorException {
 		// Now add missing members
 		for (Candidate candidate: candidatesToAdd) {
-			Member member = null;
+			Member member;
 			try {
 				// Check if the member is already in the VO (just not in the group)
 				member = getPerunBl().getMembersManagerBl().getMemberByUserExtSources(sess, getPerunBl().getGroupsManagerBl().getVo(sess, group), candidate.getUserExtSources());
