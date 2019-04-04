@@ -24,17 +24,20 @@ public class ServiceDenialDaoJdbc extends JdbcDaoSupport implements ServiceDenia
 	@Override
 	public void blockServiceOnFacility(int serviceId, int facilityId) throws InternalErrorException {
 		int newBanId = Utils.getNewId(this.getJdbcTemplate(), "service_denials_id_seq");
+		assert this.getJdbcTemplate() != null;
 		this.getJdbcTemplate().update("insert into service_denials(id, facility_id, service_id) values (?,?,?)", newBanId, facilityId, serviceId);
 	}
 
 	@Override
 	public void blockServiceOnDestination(int serviceId, int destinationId) throws InternalErrorException {
 		int newBanId = Utils.getNewId(this.getJdbcTemplate(), "service_denials_id_seq");
+		assert this.getJdbcTemplate() != null;
 		this.getJdbcTemplate().update("insert into service_denials(id, destination_id, service_id) values (?,?,?)", newBanId, destinationId, serviceId);
 	}
 
 	@Override
 	public List<Service> getServicesBlockedOnFacility(int facilityId) {
+		assert getJdbcTemplate() != null;
 		return getJdbcTemplate()
 			.query("select " + ServicesManagerImpl.serviceMappingSelectQuery +
 					" from services left join service_denials on service_denials.service_id = services.id where service_denials.facility_id = ?",
@@ -43,6 +46,7 @@ public class ServiceDenialDaoJdbc extends JdbcDaoSupport implements ServiceDenia
 
 	@Override
 	public List<Service> getServicesBlockedOnDestination(int destinationId) {
+		assert getJdbcTemplate() != null;
 		return getJdbcTemplate()
 			.query("select " + ServicesManagerImpl.serviceMappingSelectQuery +
 					" from services left join service_denials on service_denials.service_id = services.id where service_denials.destination_id = ?",
@@ -51,6 +55,7 @@ public class ServiceDenialDaoJdbc extends JdbcDaoSupport implements ServiceDenia
 
 	@Override
 	public List<Service> getServicesFromDestination(int destinationId) {
+		assert getJdbcTemplate() != null;
 		List<Service> servicesFromDestination = getJdbcTemplate().query("select distinct " + ServicesManagerImpl.serviceMappingSelectQuery +
 								" from services join facility_service_destinations on facility_service_destinations.service_id = services.id" +
 								" where facility_service_destinations.destination_id = ?",
@@ -78,25 +83,30 @@ public class ServiceDenialDaoJdbc extends JdbcDaoSupport implements ServiceDenia
 
 	@Override
 	public void unblockAllServicesOnFacility(int facilityId) {
+		assert getJdbcTemplate() != null;
 		this.getJdbcTemplate().update("delete from service_denials where facility_id = ?", facilityId);
 	}
 
 	@Override
 	public void unblockAllServicesOnDestination(int destinationId) {
+		assert getJdbcTemplate() != null;
 		this.getJdbcTemplate().update("delete from service_denials where destination_id = ?", destinationId);
 	}
 
 	@Override
 	public void unblockServiceOnFacility(int serviceId, int facilityId) {
+		assert getJdbcTemplate() != null;
 		this.getJdbcTemplate().update("delete from service_denials where facility_id = ? and service_id = ?", facilityId, serviceId);
 	}
 
 	@Override
 	public void unblockServiceOnDestination(int serviceId, int destinationId) {
+		assert getJdbcTemplate() != null;
 		this.getJdbcTemplate().update("delete from service_denials where destination_id = ? and service_id = ?", destinationId, serviceId);
 	}
 
 	private int queryForInt(String sql, Object... args) throws DataAccessException {
+		assert getJdbcTemplate() != null;
 		Integer i = getJdbcTemplate().queryForObject(sql, args, Integer.class);
 		return (i != null ? i : 0);
 	}

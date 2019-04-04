@@ -89,6 +89,7 @@ public class TaskResultDaoJdbc extends JdbcDaoSupport implements TaskResultDao {
 		standardMessage = clearZeroBytesFromString(standardMessage, 4000);
 		errorMessage = clearZeroBytesFromString(errorMessage, 4000);
 
+		assert this.getJdbcTemplate() != null;
 		this.getJdbcTemplate()
 			.update(
 					"insert into tasks_results(" +
@@ -105,8 +106,8 @@ public class TaskResultDaoJdbc extends JdbcDaoSupport implements TaskResultDao {
 					taskResult.getTaskId(),
 					taskResult.getDestinationId(),
 					taskResult.getStatus().toString(),
-					new String(errorMessage, StandardCharsets.UTF_8),
-					new String(standardMessage, StandardCharsets.UTF_8),
+					errorMessage == null ? null : new String(errorMessage, StandardCharsets.UTF_8),
+					standardMessage == null ? null : new String(standardMessage, StandardCharsets.UTF_8),
 					taskResult.getReturnCode(),
 					TaskDaoJdbc.getDateFormatter().format(taskResult.getTimestamp()),
 					engineID);
@@ -115,6 +116,7 @@ public class TaskResultDaoJdbc extends JdbcDaoSupport implements TaskResultDao {
 
 	@Override
 	public List<TaskResult> getTaskResults(int engineID) {
+		assert this.getJdbcTemplate() != null;
 		return this.getJdbcTemplate().query(
 				"select " + taskResultMappingSelectQuery + ", " + ServicesManagerImpl.destinationMappingSelectQuery + ", " +
 				ServicesManagerImpl.serviceMappingSelectQuery +
@@ -128,6 +130,7 @@ public class TaskResultDaoJdbc extends JdbcDaoSupport implements TaskResultDao {
 
 	@Override
 	public List<TaskResult> getTaskResults() {
+		assert this.getJdbcTemplate() != null;
 		return this.getJdbcTemplate().query(
 				"select " + taskResultMappingSelectQuery + ", " + ServicesManagerImpl.destinationMappingSelectQuery + ", " +
 				ServicesManagerImpl.serviceMappingSelectQuery +
@@ -139,6 +142,7 @@ public class TaskResultDaoJdbc extends JdbcDaoSupport implements TaskResultDao {
 
 	@Override
 	public TaskResult getTaskResultById(int taskResultId, int engineID) {
+		assert this.getJdbcTemplate() != null;
 		return this.getJdbcTemplate().queryForObject(
 				"select " + taskResultMappingSelectQuery + ", " + ServicesManagerImpl.destinationMappingSelectQuery + ", " +
 				ServicesManagerImpl.serviceMappingSelectQuery +
@@ -151,6 +155,7 @@ public class TaskResultDaoJdbc extends JdbcDaoSupport implements TaskResultDao {
 
 	@Override
 	public TaskResult getTaskResultById(int taskResultId) {
+		assert this.getJdbcTemplate() != null;
 		return this.getJdbcTemplate().queryForObject("select " + taskResultMappingSelectQuery + ", " + ServicesManagerImpl.destinationMappingSelectQuery + ", " +
 				ServicesManagerImpl.serviceMappingSelectQuery +
 				" from tasks_results left join destinations on tasks_results.destination_id = destinations.id " +
@@ -162,21 +167,25 @@ public class TaskResultDaoJdbc extends JdbcDaoSupport implements TaskResultDao {
 
 	@Override
 	public int clearByTask(int taskId, int engineID) {
+		assert this.getJdbcTemplate() != null;
 		return this.getJdbcTemplate().update("delete from tasks_results where task_id = ? and engine_id = ?", taskId, engineID);
 	}
 
 	@Override
 	public int clearByTask(int taskId) {
+		assert this.getJdbcTemplate() != null;
 		return this.getJdbcTemplate().update("delete from tasks_results where task_id = ?", taskId);
 	}
 
 	@Override
 	public int clearAll(int engineID) {
+		assert this.getJdbcTemplate() != null;
 		return this.getJdbcTemplate().update("delete from tasks_results where engine_id = ?", engineID);
 	}
 
 	@Override
 	public int clearAll() {
+		assert this.getJdbcTemplate() != null;
 		return this.getJdbcTemplate().update("delete from tasks_results");
 	}
 
@@ -188,6 +197,7 @@ public class TaskResultDaoJdbc extends JdbcDaoSupport implements TaskResultDao {
 		date.add(Calendar.DAY_OF_MONTH, -numDays);
 		String compareDate = TaskDaoJdbc.getDateFormatter().format(date.getTime());
 
+		assert this.getJdbcTemplate() != null;
 		return this.getJdbcTemplate().update("delete from tasks_results where engine_id = ? and " +
 				"id in (" +
 				"select otr.id from tasks_results otr " +
@@ -203,6 +213,7 @@ public class TaskResultDaoJdbc extends JdbcDaoSupport implements TaskResultDao {
 
 	@Override
 	public List<TaskResult> getTaskResultsByTask(int taskId, int engineID) {
+		assert this.getJdbcTemplate() != null;
 		return this.getJdbcTemplate().query(
 				"select " + taskResultMappingSelectQuery + ", " + ServicesManagerImpl.destinationMappingSelectQuery + ", " +
 				ServicesManagerImpl.serviceMappingSelectQuery +
@@ -217,6 +228,7 @@ public class TaskResultDaoJdbc extends JdbcDaoSupport implements TaskResultDao {
 
 	@Override
 	public List<TaskResult> getTaskResultsByTaskOnlyNewest(int taskId) {
+		assert this.getJdbcTemplate() != null;
 		return this.getJdbcTemplate().query(
 				"select " + taskResultMappingSelectQuery + ", " + ServicesManagerImpl.destinationMappingSelectQuery + ", " +
 				ServicesManagerImpl.serviceMappingSelectQuery +
@@ -243,6 +255,7 @@ public class TaskResultDaoJdbc extends JdbcDaoSupport implements TaskResultDao {
 
 	@Override
 	public List<TaskResult> getTaskResultsByTask(int taskId) {
+		assert this.getJdbcTemplate() != null;
 		return this.getJdbcTemplate().query(
 				"select " + taskResultMappingSelectQuery + ", " + ServicesManagerImpl.destinationMappingSelectQuery + ", " +
 				ServicesManagerImpl.serviceMappingSelectQuery +
@@ -255,6 +268,7 @@ public class TaskResultDaoJdbc extends JdbcDaoSupport implements TaskResultDao {
 
 	@Override
 	public List<TaskResult> getTaskResultsByTaskAndDestination(int taskId, int destinationId) {
+		assert this.getJdbcTemplate() != null;
 		return this.getJdbcTemplate().query(
 				"select " + taskResultMappingSelectQuery + ", " + ServicesManagerImpl.destinationMappingSelectQuery + ", " +
 						ServicesManagerImpl.serviceMappingSelectQuery +

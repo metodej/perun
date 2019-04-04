@@ -76,8 +76,9 @@ public class SecurityTeamsManagerImpl implements SecurityTeamsManagerImplApi {
 	@Override
 	public SecurityTeam createSecurityTeam(PerunSession sess, SecurityTeam securityTeam) throws InternalErrorException {
 
+		Utils.notNull(securityTeam, "securityTeam");
 		// we do not store empty string in description
-		if (securityTeam != null && securityTeam.getDescription() != null && securityTeam.getDescription().trim().isEmpty()) {
+		if (securityTeam.getDescription() != null && securityTeam.getDescription().trim().isEmpty()) {
 			securityTeam.setDescription(null);
 		}
 
@@ -101,8 +102,9 @@ public class SecurityTeamsManagerImpl implements SecurityTeamsManagerImplApi {
 	@Override
 	public SecurityTeam updateSecurityTeam(PerunSession sess, SecurityTeam securityTeam) throws InternalErrorException, SecurityTeamNotExistsException {
 
+		Utils.notNull(securityTeam, "securityTeam");
 		// we do not store empty string in description
-		if (securityTeam != null && securityTeam.getDescription() != null && securityTeam.getDescription().trim().isEmpty()) {
+		if (securityTeam.getDescription() != null && securityTeam.getDescription().trim().isEmpty()) {
 			securityTeam.setDescription(null);
 		}
 

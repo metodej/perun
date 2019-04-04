@@ -52,6 +52,7 @@ public class DatabaseManagerImpl implements DatabaseManagerImplApi {
 		try {
 			Connection con;
 			// for tests
+			if (jdbc.getDataSource() == null) throw new InternalErrorException("Missing data source.");
 			con = jdbc.getDataSource().getConnection();
 			String driverVersion = con.getMetaData().getDriverVersion();
 			String driverName = con.getMetaData().getDriverName();
@@ -67,6 +68,7 @@ public class DatabaseManagerImpl implements DatabaseManagerImplApi {
 		try {
 			Connection con;
 			// for tests
+			if (jdbc.getDataSource() == null) throw new InternalErrorException("Missing data source.");
 			con = jdbc.getDataSource().getConnection();
 			String dbName = con.getMetaData().getDatabaseProductName();
 			String dbVersion = con.getMetaData().getDatabaseProductVersion();
