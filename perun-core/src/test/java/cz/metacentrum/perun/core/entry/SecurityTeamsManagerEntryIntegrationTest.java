@@ -74,7 +74,7 @@ public class SecurityTeamsManagerEntryIntegrationTest extends AbstractPerunInteg
 	private User u4;
 
 	@Before
-	public void setUp() throws Exception {
+	public void setUp() {
 		securityTeamsManagerEntry = perun.getSecurityTeamsManager();
 	}
 
@@ -365,7 +365,7 @@ public class SecurityTeamsManagerEntryIntegrationTest extends AbstractPerunInteg
 		setUpSecurityTeams();
 		setUpUsers();
 
-		List<User> expected = Collections.emptyList();
+		List<User> expected = new ArrayList<>();
 		List<User> actual = securityTeamsManagerEntry.getAdmins(sess, st0,false);
 		Collections.sort(expected);
 		Collections.sort(actual);
@@ -408,7 +408,6 @@ public class SecurityTeamsManagerEntryIntegrationTest extends AbstractPerunInteg
 
 		List<User> admins = securityTeamsManagerEntry.getAdmins(sess, st0, false);
 		assertTrue("SecurityTeam should have no admins.", admins.isEmpty());
-		assertTrue("User 0 shouldn't be admin of security team.", !admins.contains(u0));
 
 		securityTeamsManagerEntry.addAdmin(sess, st0, u0);
 
@@ -811,8 +810,7 @@ public class SecurityTeamsManagerEntryIntegrationTest extends AbstractPerunInteg
 
 		List<Pair<User, String>> expected = new ArrayList<>();
 		expected.add(new Pair<>(u1, "reason"));
-		String nullString = null;
-		expected.add(new Pair<>(u2, nullString));
+		expected.add(new Pair<>(u2, null));
 
 		List<Pair<User, String>> actual = new ArrayList<>(securityTeamsManagerEntry.getBlacklistWithDescription(sess, st0));
 
@@ -869,8 +867,7 @@ public class SecurityTeamsManagerEntryIntegrationTest extends AbstractPerunInteg
 
 		List<Pair<User, String>> expected = new ArrayList<>();
 		expected.add(new Pair<>(u1, "reason"));
-		String nullString = null;
-		expected.add(new Pair<>(u2, nullString));
+		expected.add(new Pair<>(u2, null));
 
 		List<Pair<User, String>> actual = new ArrayList<>(securityTeamsManagerEntry.getBlacklistWithDescription(sess, f1));
 
@@ -935,7 +932,7 @@ public class SecurityTeamsManagerEntryIntegrationTest extends AbstractPerunInteg
 		return result;
 	}
 
-	private void setUpUsers() throws PrivilegeException, InternalErrorException, UserAlreadyBlacklistedException, UserNotExistsException, SecurityTeamNotExistsException, AlreadyMemberException {
+	private void setUpUsers() throws PrivilegeException, InternalErrorException {
 		u0 = new User();
 		u1 = new User();
 		u2 = new User();
@@ -955,7 +952,7 @@ public class SecurityTeamsManagerEntryIntegrationTest extends AbstractPerunInteg
 		perun.getUsersManager().createUser(sess, u4);
 	}
 
-	private void setUpBlacklists() throws PrivilegeException, InternalErrorException, UserAlreadyBlacklistedException, UserNotExistsException, SecurityTeamNotExistsException, AlreadyMemberException {
+	private void setUpBlacklists() throws PrivilegeException, InternalErrorException, UserAlreadyBlacklistedException, UserNotExistsException, SecurityTeamNotExistsException {
 		securityTeamsManagerEntry.addUserToBlacklist(sess, st0, u1, "reason");
 		securityTeamsManagerEntry.addUserToBlacklist(sess, st0, u2, null);
 		securityTeamsManagerEntry.addUserToBlacklist(sess, st1, u2, "reason");
@@ -964,7 +961,7 @@ public class SecurityTeamsManagerEntryIntegrationTest extends AbstractPerunInteg
 	}
 
 
-	private Group setUpGroup(User u0, User u1) throws PrivilegeException, InternalErrorException, UserNotExistsException, AlreadyAdminException, SecurityTeamNotExistsException, VoExistsException, GroupExistsException, VoNotExistsException, GroupNotExistsException, AlreadyMemberException, MemberNotExistsException, WrongReferenceAttributeValueException, WrongAttributeValueException, ExtendMembershipException, WrongAttributeAssignmentException, AttributeNotExistsException, ExternallyManagedException {
+	private Group setUpGroup(User u0, User u1) throws PrivilegeException, InternalErrorException, UserNotExistsException, VoExistsException, GroupExistsException, VoNotExistsException, GroupNotExistsException, AlreadyMemberException, MemberNotExistsException, WrongReferenceAttributeValueException, WrongAttributeValueException, ExtendMembershipException, WrongAttributeAssignmentException, AttributeNotExistsException, ExternallyManagedException {
 		Vo vo = new Vo();
 		vo.setShortName("testVo");
 		vo.setName("Test VO");
@@ -982,7 +979,7 @@ public class SecurityTeamsManagerEntryIntegrationTest extends AbstractPerunInteg
 		return authGroup;
 	}
 
-	private List<User> setUpAdmins(User u0, User u1, Group group) throws PrivilegeException, InternalErrorException, UserNotExistsException, AlreadyAdminException, SecurityTeamNotExistsException, VoExistsException, GroupExistsException, VoNotExistsException, GroupNotExistsException, AlreadyMemberException, MemberNotExistsException, WrongReferenceAttributeValueException, WrongAttributeValueException, ExtendMembershipException {
+	private List<User> setUpAdmins(User u0, User u1, Group group) throws PrivilegeException, InternalErrorException, UserNotExistsException, AlreadyAdminException, SecurityTeamNotExistsException, GroupNotExistsException, MemberNotExistsException {
 		securityTeamsManagerEntry.addAdmin(sess, st0, u0);
 		securityTeamsManagerEntry.addAdmin(sess, st0, u1);
 

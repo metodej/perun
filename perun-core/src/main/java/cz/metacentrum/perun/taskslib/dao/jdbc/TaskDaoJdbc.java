@@ -19,8 +19,6 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -112,7 +110,7 @@ public class TaskDaoJdbc extends JdbcDaoSupport implements TaskDao {
 	};
 
 	@Override
-	public int scheduleNewTask(Task task, int engineID) throws InternalErrorException {
+	public int scheduleNewTask(Task task, int engineID) {
 		int newTaskId = 0;
 		try {
 			newTaskId = Utils.getNewId(this.getJdbcTemplate(), "tasks_id_seq");
@@ -131,7 +129,7 @@ public class TaskDaoJdbc extends JdbcDaoSupport implements TaskDao {
 	}
 
 	@Override
-	public int insertTask(Task task, int engineID) throws InternalErrorException {
+	public int insertTask(Task task, int engineID) {
 		int newTaskId = 0;
 		try {
 			newTaskId = task.getId();
@@ -329,8 +327,7 @@ public class TaskDaoJdbc extends JdbcDaoSupport implements TaskDao {
 	public boolean isThereSuchTask(Service service, Facility facility, int engineID) {
 		this.getJdbcTemplate().update("select id from services where id = ?", service.getId());
 
-		List<Integer> tasks = new ArrayList<>();
-		tasks = this.getJdbcTemplate().queryForList("select id from tasks where service_id = ? and facility_id = ? and engine_id " + (engineID < 0 ? "is null" : "= ?"),
+		List<Integer> tasks = this.getJdbcTemplate().queryForList("select id from tasks where service_id = ? and facility_id = ? and engine_id " + (engineID < 0 ? "is null" : "= ?"),
 				engineID < 0 ? new Integer[] { service.getId(), facility.getId() }
 					: new Integer[] { service.getId(), facility.getId(),  engineID }, Integer.class);
 		if (tasks.size() == 0) {
@@ -345,8 +342,7 @@ public class TaskDaoJdbc extends JdbcDaoSupport implements TaskDao {
 	public boolean isThereSuchTask(Service service, Facility facility) {
 		//this.getJdbcTemplate().update("select id from services where id = ? for update", service.getId());
 
-		List<Integer> tasks = new ArrayList<>();
-		tasks = this.getJdbcTemplate().queryForList("select id from tasks where service_id = ? and facility_id = ?",
+		List<Integer> tasks = this.getJdbcTemplate().queryForList("select id from tasks where service_id = ? and facility_id = ?",
 				new Integer[] { service.getId(), facility.getId() }, Integer.class);
 		if (tasks.size() == 0) {
 			return false;

@@ -23,11 +23,11 @@ import static org.junit.Assert.assertEquals;
 public class UtilsIntegrationTest {
 
 	@Before
-	public void setUp() throws Exception {
+	public void setUp() {
 	}
 
 	@Test
-	public void parseCommonNameTest() throws Exception {
+	public void parseCommonNameTest() {
 		System.out.println("Utils.parseCommonName");
 
 		String titleBeforeString = "titleBefore";
@@ -50,7 +50,7 @@ public class UtilsIntegrationTest {
 		String text13 = "prof. RNDr. David Kurka, CSc.";
 		String text14 = "prof.,RNDr. David  Kurka_mladsi, CSc.";
 
-		Map<String,String> parsedRawName = new HashMap<>();
+		Map<String,String> parsedRawName;
 
 		parsedRawName = Utils.parseCommonName(text1);
 		assertEquals("RNDr.", parsedRawName.get(titleBeforeString));

@@ -19,8 +19,6 @@ import org.springframework.jdbc.core.JdbcPerunTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -72,10 +70,7 @@ public class VosManagerImpl implements VosManagerImplApi {
 	@Override
 	public List<Vo> getVos(PerunSession sess) throws InternalErrorException {
 		try {
-			List<Vo> list = jdbc.query("select " + voMappingSelectQuery + " from vos", VO_MAPPER);
-			if (list == null) return new ArrayList<>();
-
-			return list;
+			return jdbc.query("select " + voMappingSelectQuery + " from vos", VO_MAPPER);
 		} catch (RuntimeException ex) {
 			throw new InternalErrorException(ex);
 		}

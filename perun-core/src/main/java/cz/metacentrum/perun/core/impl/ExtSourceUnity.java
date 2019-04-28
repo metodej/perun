@@ -48,12 +48,12 @@ public class ExtSourceUnity extends ExtSource implements ExtSourceApi {
     }
 
     @Override
-    public List<Map<String, String>> findSubjectsLogins(String searchString) throws InternalErrorException, ExtSourceUnsupportedOperationException {
+    public List<Map<String, String>> findSubjectsLogins(String searchString) throws ExtSourceUnsupportedOperationException {
         throw new ExtSourceUnsupportedOperationException("For Unity using this method is not optimized, use findSubjects instead.");
     }
 
     @Override
-    public List<Map<String, String>> findSubjectsLogins(String searchString, int maxResults) throws InternalErrorException, ExtSourceUnsupportedOperationException {
+    public List<Map<String, String>> findSubjectsLogins(String searchString, int maxResults) throws ExtSourceUnsupportedOperationException {
         throw new ExtSourceUnsupportedOperationException("For Unity using this method is not optimized, use findSubjects instead.");
     }
 
@@ -102,7 +102,7 @@ public class ExtSourceUnity extends ExtSource implements ExtSourceApi {
 
         List<Map<String, String>> subjects = jsonParsing(query, 0);
 
-        if (subjects.isEmpty()) {
+        if (subjects == null || subjects.isEmpty()) {
             throw new SubjectNotExistsException("Login: " + login);
         }
         if (subjects.size() > 1) {
@@ -133,7 +133,7 @@ public class ExtSourceUnity extends ExtSource implements ExtSourceApi {
     }
 
     @Override
-    public List<Map<String, String>> getSubjectGroups(Map<String, String> attributes) throws InternalErrorException, ExtSourceUnsupportedOperationException {
+    public List<Map<String, String>> getSubjectGroups(Map<String, String> attributes) throws ExtSourceUnsupportedOperationException {
         throw new ExtSourceUnsupportedOperationException();
     }
 
@@ -205,7 +205,7 @@ public class ExtSourceUnity extends ExtSource implements ExtSourceApi {
      * @returns if responseCode to the uri is 200, then returns connection
      */
     private HttpURLConnection createConnection(String uri) throws InternalErrorException, IOException {
-        HttpURLConnection connection = null;
+        HttpURLConnection connection;
 
         username = getAttributes().get("user");
         password = getAttributes().get("password");
@@ -534,7 +534,7 @@ public class ExtSourceUnity extends ExtSource implements ExtSourceApi {
      * @return uri ending with slash character
      */
     private String checkUri(String uri) {
-        return (uri.endsWith("/")) ? uri : (uri += "/");
+        return (uri.endsWith("/")) ? uri : (uri + "/");
     }
 
     private static class UnityEntity {

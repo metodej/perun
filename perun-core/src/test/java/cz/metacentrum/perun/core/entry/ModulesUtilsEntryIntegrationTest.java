@@ -67,7 +67,7 @@ public class ModulesUtilsEntryIntegrationTest extends AbstractPerunIntegrationTe
 	private final String namespace = "someNamespace";
 
 	@Before
-	public void setUp() throws Exception {
+	public void setUp() {
 		modulesUtilsBl = perun.getModulesUtilsBl();
 	}
 
@@ -78,9 +78,6 @@ public class ModulesUtilsEntryIntegrationTest extends AbstractPerunIntegrationTe
 		vo = setUpVo();
 		facility = setUpFacility();
 		resource = setUpResource();
-
-		List<Resource> resources = new ArrayList<>();
-		resources.add(resource);
 
 		List<Attribute> attrs = setUpResourceAttribute();
 		perun.getAttributesManagerBl().setAttribute(sess, resource, attrs.get(0));
@@ -95,9 +92,6 @@ public class ModulesUtilsEntryIntegrationTest extends AbstractPerunIntegrationTe
 		vo = setUpVo();
 		facility = setUpFacility();
 		resource = setUpResource();
-
-		List<Resource> resources = new ArrayList<>();
-		resources.add(resource);
 
 		List<Attribute> attrs = setUpResourceAttribute();
 		perun.getAttributesManagerBl().setAttribute(sess, resource, attrs.get(0));
@@ -115,9 +109,6 @@ public class ModulesUtilsEntryIntegrationTest extends AbstractPerunIntegrationTe
 		facility = setUpFacility();
 		resource = setUpResource();
 
-		List<Resource> resources = new ArrayList<>();
-		resources.add(resource);
-
 		List<Attribute> attrs = setUpResourceAttribute();
 
 		assertEquals(-1, modulesUtilsBl.haveTheSameAttributeWithTheSameNamespace((PerunSessionImpl) sess, resource, attrs.get(0)));
@@ -131,9 +122,6 @@ public class ModulesUtilsEntryIntegrationTest extends AbstractPerunIntegrationTe
 		facility = setUpFacility();
 		resource = setUpResource();
 		group = setUpGroup();
-
-		List<Group> groups = new ArrayList<>();
-		groups.add(group);
 
 		List<Attribute> attrs = setUpGroupAttribute();
 		perun.getAttributesManagerBl().setAttribute(sess, group, attrs.get(0));
@@ -149,9 +137,6 @@ public class ModulesUtilsEntryIntegrationTest extends AbstractPerunIntegrationTe
 		facility = setUpFacility();
 		resource = setUpResource();
 		group = setUpGroup();
-
-		List<Group> groups = new ArrayList<>();
-		groups.add(group);
 
 		List<Attribute> attrs = setUpGroupAttribute();
 		perun.getAttributesManagerBl().setAttribute(sess, group, attrs.get(0));
@@ -169,9 +154,6 @@ public class ModulesUtilsEntryIntegrationTest extends AbstractPerunIntegrationTe
 		facility = setUpFacility();
 		resource = setUpResource();
 		group = setUpGroup();
-
-		List<Group> groups = new ArrayList<>();
-		groups.add(group);
 
 		List<Attribute> attrs = setUpGroupAttribute();
 
@@ -443,7 +425,6 @@ public class ModulesUtilsEntryIntegrationTest extends AbstractPerunIntegrationTe
 
 		try {
 			modulesUtilsBl.checkReservedUnixGroupNames(attr);
-			ok = false;
 		} catch (WrongAttributeValueException ex) {
 			ok = true;
 		}
@@ -507,7 +488,7 @@ public class ModulesUtilsEntryIntegrationTest extends AbstractPerunIntegrationTe
 	}
 
 	@Test
-	public void isNameOfEmailValid() throws Exception {
+	public void isNameOfEmailValid() {
 		System.out.println(CLASS_NAME + "isNameOfEmailValid");
 
 		assertTrue(modulesUtilsBl.isNameOfEmailValid((PerunSessionImpl) sess, "user@domain.com"));

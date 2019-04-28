@@ -47,7 +47,7 @@ import static cz.metacentrum.perun.core.impl.modules.attributes.urn_perun_user_a
 public class urn_perun_user_attribute_def_def_vsupPreferredMail extends UserAttributesModuleAbstract implements UserAttributesModuleImplApi {
 
 	@Override
-	public void checkAttributeValue(PerunSessionImpl sess, User user, Attribute attribute) throws InternalErrorException, WrongAttributeValueException, WrongAttributeAssignmentException, WrongReferenceAttributeValueException {
+	public void checkAttributeValue(PerunSessionImpl sess, User user, Attribute attribute) throws WrongAttributeValueException {
 
 		// we must allow null, since when setting required attributes all at once, value might not be filled yet
 		// if vsupMail or vsupMailAlias is empty, but it's checked by method impl.
@@ -128,7 +128,7 @@ public class urn_perun_user_attribute_def_def_vsupPreferredMail extends UserAttr
 
 		// if SET action and mail is already reserved by other user
 		if (attribute.getValue() != null) {
-			String ownersUserId = reservedMailsAttributeValue.get(attribute.getValue());
+			String ownersUserId = reservedMailsAttributeValue.get(attribute.valueAsString());
 			if (ownersUserId != null && !Objects.equals(ownersUserId, String.valueOf(user.getId()))) {
 				// TODO - maybe get actual owners attribute and throw WrongReferenceAttributeException to be nice in a GUI ?
 				throw new InternalErrorException("VŠUP preferred mail: '"+attribute.getValue()+"' is already in use by User ID: " + ownersUserId + ".");

@@ -36,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -79,7 +78,7 @@ public class SecurityTeamsManagerBlImpl implements SecurityTeamsManagerBl {
 	}
 
 	@Override
-	public SecurityTeam createSecurityTeam(PerunSession sess, SecurityTeam securityTeam) throws SecurityTeamExistsException, InternalErrorException {
+	public SecurityTeam createSecurityTeam(PerunSession sess, SecurityTeam securityTeam) throws InternalErrorException {
 		securityTeam = getSecurityTeamsManagerImpl().createSecurityTeam(sess, securityTeam);
 		getPerunBl().getAuditer().log(sess, new SecurityTeamCreated(securityTeam));
 
@@ -108,7 +107,7 @@ public class SecurityTeamsManagerBlImpl implements SecurityTeamsManagerBl {
 
 		// remove all users from blacklist, which were blacklisted by this security team.
 		List<User> blacklist = getSecurityTeamsManagerImpl().getBlacklist(sess, Collections.singletonList(securityTeam));
-		if (blacklist != null && !blacklist.isEmpty() && !forceDelete) {
+		if (!blacklist.isEmpty() && !forceDelete) {
 			throw new RelationExistsException("SecurityTeam has blacklisted users.");
 		}
 		for (User blacklistedUser : blacklist) {
@@ -118,7 +117,7 @@ public class SecurityTeamsManagerBlImpl implements SecurityTeamsManagerBl {
 
 		// remove security team from all facilities
 		List<Facility> facilities = getPerunBl().getFacilitiesManagerBl().getAssignedFacilities(sess, securityTeam);
-		if (facilities != null && !facilities.isEmpty() && !forceDelete) {
+		if (!facilities.isEmpty() && !forceDelete) {
 			throw new RelationExistsException("SecurityTeam is assigned to some facilities.");
 		}
 		for (Facility facility : facilities) {

@@ -12,7 +12,6 @@ import cz.metacentrum.perun.core.api.exceptions.ConsistencyErrorException;
 import cz.metacentrum.perun.core.api.exceptions.InternalErrorException;
 import cz.metacentrum.perun.core.api.exceptions.WrongAttributeAssignmentException;
 import cz.metacentrum.perun.core.api.exceptions.WrongAttributeValueException;
-import cz.metacentrum.perun.core.api.exceptions.WrongReferenceAttributeValueException;
 import cz.metacentrum.perun.core.impl.PerunSessionImpl;
 import cz.metacentrum.perun.core.implApi.modules.attributes.GroupResourceAttributesModuleAbstract;
 import cz.metacentrum.perun.core.implApi.modules.attributes.GroupResourceAttributesModuleImplApi;
@@ -34,7 +33,7 @@ public class urn_perun_group_resource_attribute_def_def_projectOwnerLogin extend
 	private static final Pattern pattern = Pattern.compile("^[a-zA-Z0-9][-A-z0-9_.@/]*$");
 
 	@Override
-	public void checkAttributeValue(PerunSessionImpl sess, Group group, Resource resource, Attribute attribute) throws InternalErrorException, WrongAttributeValueException, WrongReferenceAttributeValueException, WrongAttributeAssignmentException {
+	public void checkAttributeValue(PerunSessionImpl sess, Group group, Resource resource, Attribute attribute) throws InternalErrorException, WrongAttributeValueException, WrongAttributeAssignmentException {
 		String ownerLogin = (String) attribute.getValue();
 		if (ownerLogin == null) return;
 
@@ -52,7 +51,7 @@ public class urn_perun_group_resource_attribute_def_def_projectOwnerLogin extend
 
 		//Check if exists any user with this login
 		for(User u: users) {
-			Attribute userLogin = null;
+			Attribute userLogin;
 			try {
 				userLogin = sess.getPerunBl().getAttributesManagerBl().getAttribute(sess, facility, u, A_UF_V_login);
 			} catch (AttributeNotExistsException ex) {

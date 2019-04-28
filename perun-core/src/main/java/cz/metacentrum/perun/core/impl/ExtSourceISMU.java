@@ -7,7 +7,6 @@ import cz.metacentrum.perun.core.api.ExtSource;
 import cz.metacentrum.perun.core.api.GroupsManager;
 import cz.metacentrum.perun.core.api.exceptions.ExtSourceUnsupportedOperationException;
 import cz.metacentrum.perun.core.api.exceptions.InternalErrorException;
-import cz.metacentrum.perun.core.api.exceptions.SubjectNotExistsException;
 import cz.metacentrum.perun.core.blImpl.PerunBlImpl;
 import cz.metacentrum.perun.core.implApi.ExtSourceSimpleApi;
 import org.apache.commons.codec.binary.Base64;
@@ -41,17 +40,17 @@ public class ExtSourceISMU extends ExtSource implements ExtSourceSimpleApi {
 	}
 
 	@Override
-	public List<Map<String,String>> findSubjectsLogins(String searchString) throws InternalErrorException, ExtSourceUnsupportedOperationException {
+	public List<Map<String,String>> findSubjectsLogins(String searchString) throws ExtSourceUnsupportedOperationException {
 		throw new ExtSourceUnsupportedOperationException();
 	}
 
 	@Override
-	public List<Map<String, String>> findSubjectsLogins(String searchString, int maxResults) throws InternalErrorException, ExtSourceUnsupportedOperationException {
+	public List<Map<String, String>> findSubjectsLogins(String searchString, int maxResults) throws ExtSourceUnsupportedOperationException {
 		throw new ExtSourceUnsupportedOperationException();
 	}
 
 	@Override
-	public Map<String, String> getSubjectByLogin(String login) throws InternalErrorException, SubjectNotExistsException, ExtSourceUnsupportedOperationException {
+	public Map<String, String> getSubjectByLogin(String login) throws ExtSourceUnsupportedOperationException {
 		throw new ExtSourceUnsupportedOperationException();
 	}
 
@@ -66,7 +65,7 @@ public class ExtSourceISMU extends ExtSource implements ExtSourceSimpleApi {
 	protected List<Map<String,String>> querySource(String query, String searchString, int maxResults) throws InternalErrorException {
 
 		// Get the URL, if query was provided it has precedence over url attribute defined in extSource
-		String url = null;
+		String url;
 		if (query != null && !query.isEmpty()) {
 			url = query;
 		} else if (getAttributes().get("url") != null) {
@@ -78,15 +77,15 @@ public class ExtSourceISMU extends ExtSource implements ExtSourceSimpleApi {
 		log.debug("Searching in external source url:'{}'", url);
 
 		// If there is a search string, replace all occurences of the * with the searchstring
-		if (searchString != null && searchString != "") {
-			url.replaceAll("\\*", searchString);
+		if (searchString != null && !searchString.equals("")) {
+			url = url.replaceAll("\\*", searchString);
 		}
 
 		try {
 			URL u = new URL(url);
 
 			// Check supported protocols
-			HttpURLConnection http = null;
+			HttpURLConnection http;
 			if (u.getProtocol().equals("https")) {
 				http = (HttpsURLConnection)u.openConnection();
 			} else if (u.getProtocol().equals("http")) {
@@ -113,7 +112,7 @@ public class ExtSourceISMU extends ExtSource implements ExtSourceSimpleApi {
 
 			InputStream is = http.getInputStream();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-			String line = null;
+			String line;
 
 			List<Map<String, String>> subjects = new ArrayList<>();
 
@@ -137,7 +136,7 @@ public class ExtSourceISMU extends ExtSource implements ExtSourceSimpleApi {
 
 				String name = entries[2];
 				// Remove "" from name
-				name.replaceAll("^\"|\"$", "");
+				name = name.replaceAll("^\"|\"$", "");
 				// entries[3] contains name of the user, so parse it to get titleBefore, firstName, lastName and titleAfter in separate fields
 				map.putAll(Utils.parseCommonName(name));
 
@@ -155,12 +154,12 @@ public class ExtSourceISMU extends ExtSource implements ExtSourceSimpleApi {
 	}
 
 	@Override
-	public void close() throws InternalErrorException, ExtSourceUnsupportedOperationException {
+	public void close() throws ExtSourceUnsupportedOperationException {
 		throw new ExtSourceUnsupportedOperationException("Using this method is not supported for ISMU");
 	}
 
 	@Override
-	public List<Map<String, String>> getSubjectGroups(Map<String, String> attributes) throws InternalErrorException, ExtSourceUnsupportedOperationException {
+	public List<Map<String, String>> getSubjectGroups(Map<String, String> attributes) throws ExtSourceUnsupportedOperationException {
 		throw new ExtSourceUnsupportedOperationException();
 	}
 

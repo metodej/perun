@@ -40,22 +40,22 @@ public class ExtSourceCSV extends ExtSource implements ExtSourceApi {
     }
 
     @Override
-    public List<Map<String, String>> findSubjectsLogins(String searchString) throws InternalErrorException, ExtSourceUnsupportedOperationException {
+    public List<Map<String, String>> findSubjectsLogins(String searchString) throws ExtSourceUnsupportedOperationException {
         throw new ExtSourceUnsupportedOperationException("For CSV using this method is not optimized, use findSubjects instead.");
     }
 
     @Override
-    public List<Map<String, String>> findSubjectsLogins(String searchString, int maxResults) throws InternalErrorException, ExtSourceUnsupportedOperationException {
+    public List<Map<String, String>> findSubjectsLogins(String searchString, int maxResults) throws ExtSourceUnsupportedOperationException {
         throw new ExtSourceUnsupportedOperationException("For CSV using this method is not optimized, use findSubjects instead.");
     }
 
     @Override
-    public List<Map<String, String>> findSubjects(String searchString) throws InternalErrorException, ExtSourceUnsupportedOperationException {
+    public List<Map<String, String>> findSubjects(String searchString) throws InternalErrorException {
         return findSubjects(searchString, 0);
     }
 
     @Override
-    public List<Map<String, String>> findSubjects(String searchString, int maxResults) throws InternalErrorException, ExtSourceUnsupportedOperationException {
+    public List<Map<String, String>> findSubjects(String searchString, int maxResults) throws InternalErrorException {
         try {
             query = getAttributes().get("query");
 
@@ -83,7 +83,7 @@ public class ExtSourceCSV extends ExtSource implements ExtSourceApi {
     }
 
     @Override
-    public Map<String, String> getSubjectByLogin(String login) throws InternalErrorException, SubjectNotExistsException, ExtSourceUnsupportedOperationException {
+    public Map<String, String> getSubjectByLogin(String login) throws InternalErrorException, SubjectNotExistsException {
         try {
             query = getAttributes().get("loginQuery");
 
@@ -120,7 +120,7 @@ public class ExtSourceCSV extends ExtSource implements ExtSourceApi {
     }
 
     @Override
-    public List<Map<String, String>> getGroupSubjects(Map<String, String> attributes) throws InternalErrorException, ExtSourceUnsupportedOperationException {
+    public List<Map<String, String>> getGroupSubjects(Map<String, String> attributes) throws InternalErrorException {
         try {
             // Get the query for the group subjects
             String queryForGroup = attributes.get(GroupsManager.GROUPMEMBERSQUERY_ATTRNAME);
@@ -142,12 +142,12 @@ public class ExtSourceCSV extends ExtSource implements ExtSourceApi {
     }
 
     @Override
-    public void close() throws InternalErrorException, ExtSourceUnsupportedOperationException {
+    public void close() throws ExtSourceUnsupportedOperationException {
         throw new ExtSourceUnsupportedOperationException("Using this method is not supported for CSV.");
     }
 
     @Override
-    public List<Map<String, String>> getSubjectGroups(Map<String, String> attributes) throws InternalErrorException, ExtSourceUnsupportedOperationException {
+    public List<Map<String, String>> getSubjectGroups(Map<String, String> attributes) throws InternalErrorException {
         try {
             String queryForGroup = attributes.get(GroupsManager.GROUPSQUERY_ATTRNAME);
 

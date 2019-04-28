@@ -31,7 +31,7 @@ public class urn_perun_group_resource_attribute_def_def_systemUnixGID extends Gr
 	private static final String A_GR_systemIsUnixGroup = AttributesManager.NS_GROUP_RESOURCE_ATTR_DEF + ":isSystemUnixGroup";
 
 	@Override
-	public Attribute fillAttribute(PerunSessionImpl sess, Group group, Resource resource, AttributeDefinition attributeDefinition) throws InternalErrorException, WrongAttributeAssignmentException {
+	public Attribute fillAttribute(PerunSessionImpl sess, Group group, Resource resource, AttributeDefinition attributeDefinition) {
 		return new Attribute(attributeDefinition);
 	}
 
@@ -40,7 +40,7 @@ public class urn_perun_group_resource_attribute_def_def_systemUnixGID extends Gr
 		Integer gid = (Integer) attribute.getValue();
 
 		//Gid should not be null if is system unix group or if less than 1
-		Attribute isSystemGroup = new Attribute();
+		Attribute isSystemGroup;
 
 		if(gid == null) {
 			try {
@@ -70,8 +70,8 @@ public class urn_perun_group_resource_attribute_def_def_systemUnixGID extends Gr
 			if(!p.getLeft().equals(group) || !p.getRight().equals(resource)) {
 				Facility facilityForTest = sess.getPerunBl().getResourcesManagerBl().getFacility(sess, p.getRight());
 
-				Attribute group1GroupName = new Attribute();
-				Attribute group2GroupName = new Attribute();
+				Attribute group1GroupName;
+				Attribute group2GroupName;
 
 				try {
 					group1GroupName = sess.getPerunBl().getAttributesManagerBl().getAttribute(sess, resource, group, A_GR_systemUnixGroupName);

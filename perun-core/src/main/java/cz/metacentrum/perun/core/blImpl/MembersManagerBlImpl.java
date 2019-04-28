@@ -96,7 +96,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -643,8 +642,6 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 			throw new InternalErrorException("Can't find candidate for login " + login + " in extSource " + extSource, ex);
 		} catch (ExtSourceUnsupportedOperationException ex) {
 			throw new InternalErrorException("Some operation is not allowed for extSource " + extSource, ex);
-		} catch (ExtSourceNotExistsException ex) {
-			throw new InternalErrorException("ExtSource " + extSource + " not exists.");
 		}
 
 		return this.createMember(sess, vo, candidate, groups);
@@ -797,12 +794,12 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 	}
 
 	@Override
-	public List<RichMember> getCompleteRichMembers(PerunSession sess, Group group, Resource resource, List<String> attrsNames, List<String> allowedStatuses) throws InternalErrorException, AttributeNotExistsException, ParentGroupNotExistsException, GroupResourceMismatchException {
+	public List<RichMember> getCompleteRichMembers(PerunSession sess, Group group, Resource resource, List<String> attrsNames, List<String> allowedStatuses) throws InternalErrorException, AttributeNotExistsException, GroupResourceMismatchException {
 		return getOnlyRichMembersWithAllowedStatuses(sess, this.getRichMembersWithAttributesByNames(sess, group, resource, attrsNames), allowedStatuses);
 	}
 
 	@Override
-	public List<RichMember> getCompleteRichMembers(PerunSession sess, Group group, List<String> attrsNames, boolean lookingInParentGroup) throws InternalErrorException, AttributeNotExistsException, ParentGroupNotExistsException, WrongAttributeAssignmentException {
+	public List<RichMember> getCompleteRichMembers(PerunSession sess, Group group, List<String> attrsNames, boolean lookingInParentGroup) throws InternalErrorException, AttributeNotExistsException, ParentGroupNotExistsException {
 		if(lookingInParentGroup) group = getPerunBl().getGroupsManagerBl().getParentGroup(sess, group);
 
 		if(attrsNames == null || attrsNames.isEmpty()) {
@@ -813,39 +810,39 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 	}
 
 	@Override
-	public List<RichMember> getCompleteRichMembers(PerunSession sess, Group group, List<String> attrsNames, List<String> allowedStatuses, boolean lookingInParentGroup) throws InternalErrorException, AttributeNotExistsException, ParentGroupNotExistsException, WrongAttributeAssignmentException {
+	public List<RichMember> getCompleteRichMembers(PerunSession sess, Group group, List<String> attrsNames, List<String> allowedStatuses, boolean lookingInParentGroup) throws InternalErrorException, AttributeNotExistsException, ParentGroupNotExistsException {
 		return getOnlyRichMembersWithAllowedStatuses(sess, this.getCompleteRichMembers(sess, group, attrsNames, lookingInParentGroup), allowedStatuses);
 	}
 
 	@Override
-	public List<RichMember> findCompleteRichMembers(PerunSession sess, Vo vo, List<String> attrsNames, String searchString) throws InternalErrorException, AttributeNotExistsException {
+	public List<RichMember> findCompleteRichMembers(PerunSession sess, Vo vo, List<String> attrsNames, String searchString) throws InternalErrorException {
 		return this.findRichMembersWithAttributesInVo(sess, vo, searchString, attrsNames);
 	}
 
 
 	@Override
-	public List<RichMember> findCompleteRichMembers(PerunSession sess, List<String> attrsNames, String searchString) throws InternalErrorException, AttributeNotExistsException {
+	public List<RichMember> findCompleteRichMembers(PerunSession sess, List<String> attrsNames, String searchString) throws InternalErrorException {
 		return this.findRichMembersWithAttributes(sess, searchString, attrsNames);
 	}
 
 	@Override
-	public List<RichMember> findCompleteRichMembers(PerunSession sess, Vo vo, List<String> attrsNames, List<String> allowedStatuses, String searchString) throws InternalErrorException, AttributeNotExistsException {
+	public List<RichMember> findCompleteRichMembers(PerunSession sess, Vo vo, List<String> attrsNames, List<String> allowedStatuses, String searchString) throws InternalErrorException {
 		return getOnlyRichMembersWithAllowedStatuses(sess, this.findCompleteRichMembers(sess, vo, attrsNames, searchString), allowedStatuses);
 	}
 
 	@Override
-	public List<RichMember> findCompleteRichMembers(PerunSession sess, List<String> attrsNames, List<String> allowedStatuses, String searchString) throws InternalErrorException, AttributeNotExistsException {
+	public List<RichMember> findCompleteRichMembers(PerunSession sess, List<String> attrsNames, List<String> allowedStatuses, String searchString) throws InternalErrorException {
 		return getOnlyRichMembersWithAllowedStatuses(sess, this.findCompleteRichMembers(sess, attrsNames, searchString), allowedStatuses);
 	}
 
 	@Override
-	public List<RichMember> findCompleteRichMembers(PerunSession sess, Group group, List<String> attrsNames, String searchString, boolean lookingInParentGroup) throws InternalErrorException, AttributeNotExistsException, ParentGroupNotExistsException {
+	public List<RichMember> findCompleteRichMembers(PerunSession sess, Group group, List<String> attrsNames, String searchString, boolean lookingInParentGroup) throws InternalErrorException, ParentGroupNotExistsException {
 		if(lookingInParentGroup) group = getPerunBl().getGroupsManagerBl().getParentGroup(sess, group);
 		return this.findRichMembersWithAttributesInGroup(sess, group, searchString, attrsNames);
 	}
 
 	@Override
-	public List<RichMember> findCompleteRichMembers(PerunSession sess, Group group, List<String> attrsNames, List<String> allowedStatuses, String searchString, boolean lookingInParentGroup) throws InternalErrorException, AttributeNotExistsException, ParentGroupNotExistsException {
+	public List<RichMember> findCompleteRichMembers(PerunSession sess, Group group, List<String> attrsNames, List<String> allowedStatuses, String searchString, boolean lookingInParentGroup) throws InternalErrorException, ParentGroupNotExistsException {
 		return getOnlyRichMembersWithAllowedStatuses(sess, this.findCompleteRichMembers(sess, group, attrsNames, searchString, lookingInParentGroup), allowedStatuses);
 	}
 
@@ -857,9 +854,8 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 	 * @param richMembers
 	 * @param allowedStatuses
 	 * @return list of allowed richMembers
-	 * @throws InternalErrorException
 	 */
-	private List<RichMember> getOnlyRichMembersWithAllowedStatuses(PerunSession sess, List<RichMember> richMembers, List<String> allowedStatuses) throws InternalErrorException {
+	private List<RichMember> getOnlyRichMembersWithAllowedStatuses(PerunSession sess, List<RichMember> richMembers, List<String> allowedStatuses) {
 		List<RichMember> allowedRichMembers = new ArrayList<>();
 		if(richMembers == null || richMembers.isEmpty()) return allowedRichMembers;
 		if(allowedStatuses == null || allowedStatuses.isEmpty()) return richMembers;
@@ -887,7 +883,7 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 			AttributeDefinition attrDef = perunBl.getAttributesManagerBl().getAttributeDefinition(sess, atrrName);
 			attrsDef.add(attrDef);
 		}
-		List<RichMember> richMembersWithAttributes = null;
+		List<RichMember> richMembersWithAttributes;
 		try {
 			richMembersWithAttributes = this.convertMembersToRichMembersWithAttributes(sess, group, resource, richMembers, attrsDef);
 		} catch (MemberResourceMismatchException ex) {
@@ -1266,16 +1262,16 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 	}
 
 	@Override
-	public List<Member> findMembersInParentGroup(PerunSession sess, Group group, String searchString) throws InternalErrorException, ParentGroupNotExistsException{
+	public List<Member> findMembersInParentGroup(PerunSession sess, Group group, String searchString) throws InternalErrorException {
 
 		List<User> users = getPerunBl().getUsersManagerBl().findUsers(sess, searchString);
-		List<Member> allGroupMembers = new ArrayList<>();
+		List<Member> allGroupMembers;
 		if(group.getParentGroupId() == null) {
-			Vo vo = null;
+			Vo vo;
 			try {
 				vo = getPerunBl().getVosManagerBl().getVoById(sess, group.getVoId());
 			} catch (VoNotExistsException ex) {
-				throw new ConsistencyErrorException(group + " is not in " + vo);
+				throw new ConsistencyErrorException("Vo for group " + group + " does not exist.");
 			}
 			allGroupMembers = getPerunBl().getMembersManagerBl().getMembers(sess, vo);
 		} else {
@@ -1312,7 +1308,7 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 	}
 
 	@Override
-	public List<RichMember> findRichMembersWithAttributesInParentGroup(PerunSession sess, Group group, String searchString) throws InternalErrorException, ParentGroupNotExistsException{
+	public List<RichMember> findRichMembersWithAttributesInParentGroup(PerunSession sess, Group group, String searchString) throws InternalErrorException {
 
 		List<Member> members = findMembersInParentGroup(sess, group, searchString);
 		return this.convertMembersToRichMembersWithAttributes(sess, this.convertMembersToRichMembers(sess, members));
@@ -1462,18 +1458,14 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 		member.setStatus(Status.VALID);
 		getPerunBl().getAuditer().log(sess, new MemberValidated(member));
 		if(oldStatus.equals(Status.INVALID) || oldStatus.equals(Status.DISABLED)) {
-			try {
-				getPerunBl().getAttributesManagerBl().doTheMagic(sess, member);
-			} catch (WrongAttributeAssignmentException ex) {
-				throw new InternalErrorException(ex);
-			}
+			getPerunBl().getAttributesManagerBl().doTheMagic(sess, member);
 		}
 
 		return member;
 	}
 
 	@Override
-	public Member validateMemberAsync(final PerunSession sess, final Member member) throws InternalErrorException {
+	public Member validateMemberAsync(final PerunSession sess, final Member member) {
 		new Thread(() -> {
 			try {
 				Thread.sleep(5000);
@@ -1590,7 +1582,7 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 	}
 
 	@Override
-	public List<Member> retainMembersWithStatus(PerunSession sess, List<Member> members, Status status) throws InternalErrorException {
+	public List<Member> retainMembersWithStatus(PerunSession sess, List<Member> members, Status status) {
 		members.removeIf(member -> !haveStatus(sess, member, status));
 		return members;
 	}
@@ -1636,7 +1628,7 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 	  // Check if the VO has set membershipExpirationRules attribute
     LinkedHashMap<String, String> membershipExpirationRules;
 
-    Attribute membershipExpirationRulesAttribute = null;
+    Attribute membershipExpirationRulesAttribute;
     try {
       membershipExpirationRulesAttribute = getPerunBl().getAttributesManagerBl().getAttribute(sess, vo, MembersManager.membershipExpirationRulesAttributeName);
       membershipExpirationRules = (LinkedHashMap<String, String>) membershipExpirationRulesAttribute.getValue();
@@ -1923,7 +1915,7 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 		// Check if the VO has set membershipExpirationRules attribute
 		LinkedHashMap<String, String> membershipExpirationRules;
 
-		Attribute membershipExpirationRulesAttribute = null;
+		Attribute membershipExpirationRulesAttribute;
 		try {
 			membershipExpirationRulesAttribute = getPerunBl().getAttributesManagerBl().getAttribute(sess, vo, MembersManager.membershipExpirationRulesAttributeName);
 			membershipExpirationRules = (LinkedHashMap<String, String>) membershipExpirationRulesAttribute.getValue();
@@ -1986,7 +1978,7 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 		LinkedHashMap<String, String> membershipExpirationRules;
 
 		Vo vo;
-		Attribute membershipExpirationRulesAttribute = null;
+		Attribute membershipExpirationRulesAttribute;
 		try {
 			vo = getPerunBl().getVosManagerBl().getVoById(sess, member.getVoId());
 			membershipExpirationRulesAttribute = getPerunBl().getAttributesManagerBl().getAttribute(sess, vo, MembersManager.membershipExpirationRulesAttributeName);
@@ -2014,7 +2006,7 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 		}
 
 		// Get current membershipExpiration date
-		Attribute membershipExpirationAttribute = null;
+		Attribute membershipExpirationAttribute;
 		try {
 			membershipExpirationAttribute = getPerunBl().getAttributesManagerBl().getAttribute(sess, member,
 					EXPIRATION);
@@ -2025,7 +2017,7 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 			throw new InternalErrorException(e);
 		}
 
-		boolean isServiceUser = false;
+		boolean isServiceUser;
 		try {
 			User user = getPerunBl().getUsersManagerBl().getUserById(sess, member.getUserId());
 			isServiceUser = user.isServiceUser();
@@ -2297,7 +2289,7 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 	}
 
 	@Override
-	public Member setSponsorshipForMember(PerunSession session, Member sponsoredMember, User sponsor) throws MemberNotExistsException, AlreadySponsoredMemberException, UserNotInRoleException, InternalErrorException {
+	public Member setSponsorshipForMember(PerunSession session, Member sponsoredMember, User sponsor) throws AlreadySponsoredMemberException, UserNotInRoleException, InternalErrorException {
 		if(sponsoredMember.isSponsored()) {
 			throw new AlreadySponsoredMemberException(sponsoredMember + " is already sponsored member!");
 		}
@@ -2322,7 +2314,7 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 	}
 
 	@Override
-	public Member unsetSponsorshipForMember(PerunSession session, Member sponsoredMember) throws MemberNotExistsException, MemberNotSponsoredException, InternalErrorException {
+	public Member unsetSponsorshipForMember(PerunSession session, Member sponsoredMember) throws MemberNotSponsoredException, InternalErrorException {
 		if(!sponsoredMember.isSponsored()) {
 			throw new MemberNotSponsoredException(sponsoredMember + " is not sponsored member!");
 		}
@@ -2339,7 +2331,7 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 	}
 
 	@Override
-	public Member createSponsoredMember(PerunSession session, Vo vo, String namespace, String guestName, String password, User sponsor, boolean asyncValidation) throws MemberNotExistsException, InternalErrorException, AlreadyMemberException, LoginNotExistsException, PasswordOperationTimeoutException, PasswordCreationFailedException, PasswordStrengthFailedException, ExtendMembershipException, WrongAttributeValueException, ExtSourceNotExistsException, WrongReferenceAttributeValueException, UserNotInRoleException {
+	public Member createSponsoredMember(PerunSession session, Vo vo, String namespace, String guestName, String password, User sponsor, boolean asyncValidation) throws InternalErrorException, AlreadyMemberException, LoginNotExistsException, PasswordCreationFailedException, ExtendMembershipException, WrongAttributeValueException, ExtSourceNotExistsException, WrongReferenceAttributeValueException, UserNotInRoleException {
 		//check that sponsoring user has role SPONSOR for the VO
 		if (!getPerunBl().getVosManagerBl().isUserInRoleForVo(session, sponsor, Role.SPONSOR, vo, true)) {
 			throw new UserNotInRoleException("user " + sponsor.getId() + " is not in role SPONSOR for VO " + vo.getId());
@@ -2487,9 +2479,8 @@ public class MembersManagerBlImpl implements MembersManagerBl {
 	 * @param members
 	 * @param type
 	 * @return list of members with the same type
-	 * @throws InternalErrorException
 	 */
-	private List<Member> setAllMembersSameType(List<Member> members, MembershipType type) throws InternalErrorException {
+	private List<Member> setAllMembersSameType(List<Member> members, MembershipType type) {
 		if(members == null) return new ArrayList<>();
 		for(Member m: members) {
 			m.setMembershipType(type);

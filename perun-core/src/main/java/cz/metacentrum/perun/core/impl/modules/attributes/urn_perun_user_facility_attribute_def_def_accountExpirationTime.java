@@ -14,7 +14,6 @@ import cz.metacentrum.perun.core.api.exceptions.AttributeNotExistsException;
 import cz.metacentrum.perun.core.api.exceptions.InternalErrorException;
 import cz.metacentrum.perun.core.api.exceptions.WrongAttributeAssignmentException;
 import cz.metacentrum.perun.core.api.exceptions.WrongAttributeValueException;
-import cz.metacentrum.perun.core.api.exceptions.WrongReferenceAttributeValueException;
 import cz.metacentrum.perun.core.impl.PerunSessionImpl;
 import cz.metacentrum.perun.core.implApi.modules.attributes.UserFacilityAttributesModuleAbstract;
 import cz.metacentrum.perun.core.implApi.modules.attributes.UserFacilityAttributesModuleImplApi;
@@ -32,13 +31,13 @@ public class urn_perun_user_facility_attribute_def_def_accountExpirationTime ext
 	private static final String A_F_D_accountExpirationTime = AttributesManager.NS_FACILITY_ATTR_DEF + ":accountExpirationTime";
 
 	@Override
-	public void checkAttributeValue(PerunSessionImpl perunSession, User user, Facility facility, Attribute attribute) throws InternalErrorException, WrongAttributeValueException, WrongReferenceAttributeValueException, WrongAttributeAssignmentException {
+	public void checkAttributeValue(PerunSessionImpl perunSession, User user, Facility facility, Attribute attribute) throws InternalErrorException, WrongAttributeValueException, WrongAttributeAssignmentException {
 		Integer accExpTime = (Integer) attribute.getValue();
 
 		if (accExpTime == null) {
 			throw new WrongAttributeValueException("account expiration time shouldn't be null");
 		}
-		Integer facilityAccExpTime = null;
+		Integer facilityAccExpTime;
 		try {
 			facilityAccExpTime = (Integer) perunSession.getPerunBl().getAttributesManagerBl().getAttribute(perunSession, facility, A_F_D_accountExpirationTime).getValue();
 		} catch (AttributeNotExistsException ex) {
@@ -58,7 +57,7 @@ public class urn_perun_user_facility_attribute_def_def_accountExpirationTime ext
 	public Attribute fillAttribute(PerunSessionImpl perunSession, User user, Facility facility, AttributeDefinition attribute) throws InternalErrorException, WrongAttributeAssignmentException {
 		Attribute ret = new Attribute(attribute);
 		List<Integer> resourcesExpTimes = new ArrayList<>();
-		Integer resourceExpTime = null;
+		Integer resourceExpTime;
 		for (Resource r : perunSession.getPerunBl().getUsersManagerBl().getAllowedResources(perunSession, facility, user)) {
 			try { //getting all resources at which user has access
 				resourceExpTime = (Integer) perunSession.getPerunBl().getAttributesManagerBl().getAttribute(perunSession, r, attribute.getName()).getValue();
@@ -69,7 +68,7 @@ public class urn_perun_user_facility_attribute_def_def_accountExpirationTime ext
 				throw new InternalErrorException(ex);
 			}
 		}
-		Integer facilityAccExpTime = null;
+		Integer facilityAccExpTime;
 		try {
 			facilityAccExpTime = (Integer) perunSession.getPerunBl().getAttributesManagerBl().getAttribute(perunSession, facility, attribute.getName()).getValue();
 		} catch (AttributeNotExistsException ex) {
