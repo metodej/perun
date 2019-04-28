@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ *
  * @author Sona Mastrakova
  */
 public class ExtSourceCSV extends ExtSource implements ExtSourceApi {
@@ -32,7 +33,7 @@ public class ExtSourceCSV extends ExtSource implements ExtSourceApi {
 
     private static PerunBlImpl perunBl;
 
-    // Filled by Spring (perun-core.xml)
+    // filled by spring (perun-core.xml)
     public static PerunBlImpl setPerunBlImpl(PerunBlImpl perun) {
         perunBl = perun;
         return perun;
@@ -69,8 +70,8 @@ public class ExtSourceCSV extends ExtSource implements ExtSourceApi {
             //Replace '?' by searchString
             query = query.replaceAll("\\?", searchString);
 
-            //Get CSV file
-            prepareFile();
+            //Get csv file
+            prepareEnvironment();
 
             return csvParsing(query, maxResults);
 
@@ -97,8 +98,8 @@ public class ExtSourceCSV extends ExtSource implements ExtSourceApi {
             //Replace '?' by searchString
             query = query.replaceAll("\\?", login);
 
-            //Get CSV file
-            prepareFile();
+            //Get csv file
+            prepareEnvironment();
 
             List<Map<String, String>> subjects = this.csvParsing(query, 0);
 
@@ -124,13 +125,13 @@ public class ExtSourceCSV extends ExtSource implements ExtSourceApi {
             // Get the query for the group subjects
             String queryForGroup = attributes.get(GroupsManager.GROUPMEMBERSQUERY_ATTRNAME);
 
-            // If there is no query for group, throw exception
+            //If there is no query for group, throw exception
             if (queryForGroup == null) {
                 throw new InternalErrorException("Attribute " + GroupsManager.GROUPMEMBERSQUERY_ATTRNAME + " can't be null.");
             }
 
-            // Get CSV file
-            prepareFile();
+            //Get csv file
+            prepareEnvironment();
 
             return csvParsing(queryForGroup, 0);
 
@@ -154,8 +155,7 @@ public class ExtSourceCSV extends ExtSource implements ExtSourceApi {
                 throw new InternalErrorException("Attribute " + GroupsManager.GROUPSQUERY_ATTRNAME + " can't be null.");
             }
 
-			// Get CSV file
-            prepareFile();
+            prepareEnvironment();
 
             return csvParsing(queryForGroup, 0);
 
@@ -165,8 +165,8 @@ public class ExtSourceCSV extends ExtSource implements ExtSourceApi {
         return null;
     }
 
-    private void prepareFile() throws InternalErrorException {
-        //Get CSV file
+    private void prepareEnvironment() throws InternalErrorException {
+        //Get csv files
         file = getAttributes().get("file");
         if (file == null || file.isEmpty()) {
             throw new InternalErrorException("File cannot be empty!");
@@ -176,7 +176,12 @@ public class ExtSourceCSV extends ExtSource implements ExtSourceApi {
     private List<Map<String, String>> csvParsing(String query, int maxResults) throws InternalErrorException, IOException {
         List<Map<String, String>> subjects = new ArrayList<>();
 
-		CSVReader reader = initializeCSVReader(file);
+        FileReader fileReader = new FileReader(file);
+        if (fileReader == null) {
+            throw new FileNotFoundException("File was not found!");
+        }
+
+        CSVReader reader = new CSVReader(fileReader);
 
         header = reader.readNext();
         if (header == null) {
@@ -208,27 +213,12 @@ public class ExtSourceCSV extends ExtSource implements ExtSourceApi {
         return subjects;
     }
 
-	/**
-	 * Initialize CSVReader object to read CSV file from path defined in parameter.
-	 *
-	 * @param fileName Path to file
-	 * @return CSVReader object
-	 * @throws FileNotFoundException
-	 */
-	private CSVReader initializeCSVReader(String fileName) throws FileNotFoundException {
-		FileReader fileReader = new FileReader(fileName);
-		if (fileReader == null) {
-			throw new FileNotFoundException("File was not found!");
-		}
-		return new CSVReader(fileReader);
-	}
-
     /**
-     * Comparison of one row in CSV file with the query.
+     * Comparison of 1 row in csv file with the query.
      * - if the row would be result of the query, then this method returns true
      * - if not, then this method returns false
      *
-     * @param row one row from CSV file
+     * @param row 1 row from csv file
      * @param query query we want to 'execute' on the row, e.g. nameOfColumn=valueInRow
      * @return boolean
      * @throws InternalErrorException
@@ -263,7 +253,7 @@ public class ExtSourceCSV extends ExtSource implements ExtSourceApi {
                     }
                 }
             } else {
-                // If there's no symbol '=' or word 'contains' in the query
+                // if there's no symbol '=' or word 'contains' in the query
                 throw new InternalErrorException("Wrong query!");
             }
         }
@@ -272,9 +262,9 @@ public class ExtSourceCSV extends ExtSource implements ExtSourceApi {
     }
 
     /**
-     * Creates Map<String,String> from one row in CSV file
+     * Creates Map<String,String> from 1 row in csv file
      *
-     * @param line one row from CSV file
+     * @param line 1 row from csv file
      * @return Map<String, String>, like <name,value>
      * @throws InternalErrorException
      */
@@ -320,12 +310,6 @@ public class ExtSourceCSV extends ExtSource implements ExtSourceApi {
         return lineAsMap;
     }
 
-	/**
-	 * Get attributes of the external source (defined in perun-extSources.xml).
-	 *
-	 * @return map with attributes about the external source
-	 * @throws InternalErrorException
-	 */
     protected Map<String,String> getAttributes() throws InternalErrorException {
         return perunBl.getExtSourcesManagerBl().getAttributes(this);
     }
