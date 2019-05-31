@@ -41,7 +41,6 @@ import cz.metacentrum.perun.core.api.Member;
 import cz.metacentrum.perun.core.api.MemberGroupStatus;
 import cz.metacentrum.perun.core.api.MembershipType;
 import cz.metacentrum.perun.core.api.Pair;
-import cz.metacentrum.perun.core.api.PerunBean;
 import cz.metacentrum.perun.core.api.PerunBeanProcessingPool;
 import cz.metacentrum.perun.core.api.PerunClient;
 import cz.metacentrum.perun.core.api.PerunPrincipal;
@@ -135,6 +134,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * GroupsManager business logic
@@ -2066,62 +2066,64 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 	}
 
 	@Override
-	public List<Group> getGroupsByPerunBean(PerunSession sess, PerunBean perunBean) throws InternalErrorException {
+	public List<Group> getGroupsByPerunBean(PerunSession sess, Member member) throws InternalErrorException {
+		List<Group> groups = new ArrayList<>(new HashSet<>(getPerunBl().getGroupsManagerBl().getAllMemberGroups(sess, member)));
+		// Sort
+		Collections.sort(groups);
+		return groups;
+	}
+
+	@Override
+	public List<Group> getGroupsByPerunBean(PerunSession sess, Resource resource) throws InternalErrorException {
+		List<Group> groups = new ArrayList<>(new HashSet<>(getPerunBl().getResourcesManagerBl().getAssignedGroups(sess, resource)));
+		// Sort
+		Collections.sort(groups);
+		return groups;
+	}
+
+	@Override
+	public List<Group> getGroupsByPerunBean(PerunSession sess, User user) throws InternalErrorException {
 		List<Group> groups = new ArrayList<>();
-
-		//All possible useful objects
-		Vo vo = null;
-		Facility facility = null;
-		Group group = null;
-		Member member = null;
-		User user = null;
-		Host host = null;
-		Resource resource = null;
-
-		if(perunBean != null) {
-			if(perunBean instanceof Vo) vo = (Vo) perunBean;
-			else if(perunBean instanceof Facility) facility = (Facility) perunBean;
-			else if(perunBean instanceof Group) group = (Group) perunBean;
-			else if(perunBean instanceof Member) member = (Member) perunBean;
-			else if(perunBean instanceof User) user = (User) perunBean;
-			else if(perunBean instanceof Host) host = (Host) perunBean;
-			else if(perunBean instanceof Resource) resource = (Resource) perunBean;
-			else {
-				throw new InternalErrorException("There is unrecognized object in primaryHolder of aidingAttr.");
-			}
-		} else {
-			throw new InternalErrorException("Aiding attribute must have primaryHolder which is not null.");
+		List<Member> members = getPerunBl().getMembersManagerBl().getMembersByUser(sess, user);
+		for(Member memberElement: members) {
+			groups.addAll(getPerunBl().getGroupsManagerBl().getAllMemberGroups(sess, memberElement));
 		}
-
-		//Important For Groups not work with Subgroups! Invalid members are executed too.
-
-		if(group != null) {
-			groups.add(group);
-		} else if(member != null) {
-			groups.addAll(getPerunBl().getGroupsManagerBl().getAllMemberGroups(sess, member));
-		} else if(resource != null) {
-			groups.addAll(getPerunBl().getResourcesManagerBl().getAssignedGroups(sess, resource));
-		} else if(user != null) {
-			List<Member> members = getPerunBl().getMembersManagerBl().getMembersByUser(sess, user);
-			for(Member memberElement: members) {
-				groups.addAll(getPerunBl().getGroupsManagerBl().getAllMemberGroups(sess, memberElement));
-			}
-		} else if(host != null) {
-			facility = getPerunBl().getFacilitiesManagerBl().getFacilityForHost(sess, host);
-			List<Resource> resourcesFromFacility = getPerunBl().getFacilitiesManagerBl().getAssignedResources(sess, facility);
-			for(Resource resourceElement: resourcesFromFacility) {
-				groups.addAll(getPerunBl().getGroupsManagerBl().getAssignedGroupsToResource(sess, resourceElement));
-			}
-		} else if(facility != null) {
-			List<Resource> resourcesFromFacility = getPerunBl().getFacilitiesManagerBl().getAssignedResources(sess, facility);
-			for(Resource resourceElement: resourcesFromFacility) {
-				groups.addAll(getPerunBl().getGroupsManagerBl().getAssignedGroupsToResource(sess, resourceElement));
-			}
-		} else if(vo != null) {
-			groups.addAll(getPerunBl().getGroupsManagerBl().getAllGroups(sess, vo));
-		}
-
 		groups = new ArrayList<>(new HashSet<>(groups));
+		// Sort
+		Collections.sort(groups);
+		return groups;
+	}
+
+	@Override
+	public List<Group> getGroupsByPerunBean(PerunSession sess, Host host) throws InternalErrorException {
+		List<Group> groups = new ArrayList<>();
+		Facility facility = getPerunBl().getFacilitiesManagerBl().getFacilityForHost(sess, host);
+		List<Resource> resourcesFromFacility = getPerunBl().getFacilitiesManagerBl().getAssignedResources(sess, facility);
+		for(Resource resourceElement: resourcesFromFacility) {
+			groups.addAll(getPerunBl().getGroupsManagerBl().getAssignedGroupsToResource(sess, resourceElement));
+		}
+		groups = new ArrayList<>(new HashSet<>(groups));
+		// Sort
+		Collections.sort(groups);
+		return groups;
+	}
+
+	@Override
+	public List<Group> getGroupsByPerunBean(PerunSession sess, Facility facility) throws InternalErrorException {
+		List<Group> groups = new ArrayList<>();
+		List<Resource> resourcesFromFacility = getPerunBl().getFacilitiesManagerBl().getAssignedResources(sess, facility);
+		for(Resource resourceElement: resourcesFromFacility) {
+			groups.addAll(getPerunBl().getGroupsManagerBl().getAssignedGroupsToResource(sess, resourceElement));
+		}
+		groups = new ArrayList<>(new HashSet<>(groups));
+		// Sort
+		Collections.sort(groups);
+		return groups;
+	}
+
+	@Override
+	public List<Group> getGroupsByPerunBean(PerunSession sess, Vo vo) throws InternalErrorException {
+		List<Group> groups = new ArrayList<>(new HashSet<>(getPerunBl().getGroupsManagerBl().getAllGroups(sess, vo)));
 		// Sort
 		Collections.sort(groups);
 		return groups;
@@ -2195,29 +2197,34 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 
 	@Override
 	public List<RichGroup> filterOnlyAllowedAttributes(PerunSession sess, List<RichGroup> richGroups, Resource resource, boolean useContext) throws InternalErrorException {
+		return this.filterOnlyAllowedAttributes(sess, richGroups, null, resource, useContext);
+	}
+
+	@Override
+	public List<RichGroup> filterOnlyAllowedAttributes(PerunSession sess, List<RichGroup> richGroups, Member member, Resource resource, boolean useContext) throws InternalErrorException {
+		//If empty, return empty list (no filtering is needed)
+		List<RichGroup> filteredRichGroups = new ArrayList<>();
+		if(richGroups == null || richGroups.isEmpty()) return filteredRichGroups;
 
 		//If no context should be used - every attribute is unique in context of group (for every group test access rights for all attributes again)
 		if(!useContext) return filterOnlyAllowedAttributes(sess, richGroups);
 
 		//If context should be used - every attribute is unique in a context of users authz_roles for a group + attribute URN
 		// (every attribute test only once per authz+friendlyName)
-		List<RichGroup> filteredRichGroups = new ArrayList<>();
-		if(richGroups == null || richGroups.isEmpty()) return filteredRichGroups;
-
 		// context+attr_name to boolean where null means - no rights at all, false means no write rights, true means read and write rights
 		Map<String, Boolean> contextMap = new HashMap<>();
 
-		for(RichGroup rg : richGroups) {
+		for(RichGroup richGroup : richGroups) {
 
-			String voadmin = ((AuthzResolver.isAuthorized(sess, Role.VOADMIN, rg) ? "VOADMIN" : ""));
-			String voobserver = ((AuthzResolver.isAuthorized(sess, Role.VOOBSERVER, rg) ? "VOOBSERVER" : ""));
-			String groupadmin = ((AuthzResolver.isAuthorized(sess, Role.GROUPADMIN, rg) ? "GROUPADMIN" : ""));
+			String voadmin = ((AuthzResolver.isAuthorized(sess, Role.VOADMIN, richGroup) ? "VOADMIN" : ""));
+			String voobserver = ((AuthzResolver.isAuthorized(sess, Role.VOOBSERVER, richGroup) ? "VOOBSERVER" : ""));
+			String groupadmin = ((AuthzResolver.isAuthorized(sess, Role.GROUPADMIN, richGroup) ? "GROUPADMIN" : ""));
 			String facilityadmin = ((AuthzResolver.isAuthorized(sess, Role.FACILITYADMIN) ? "FACILITYADMIN" : ""));
 			String key = voadmin + voobserver + groupadmin + facilityadmin;
 
 			//Filtering group attributes
-			if(rg.getAttributes() != null) {
-				List<Attribute> groupAttributes = rg.getAttributes();
+			if(richGroup.getAttributes() != null) {
+				List<Attribute> groupAttributes = richGroup.getAttributes();
 				List<Attribute> allowedGroupAttributes = new ArrayList<>();
 				for(Attribute groupAttr: groupAttributes) {
 					//if there is record in contextMap, use it
@@ -2232,16 +2239,20 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 						//if not, get information about authz rights and set record to contextMap
 						boolean canRead = false;
 						if (groupAttr.getNamespace().startsWith(AttributesManager.NS_GROUP_RESOURCE_ATTR)) {
-							canRead = AuthzResolver.isAuthorizedForAttribute(sess, ActionType.READ, groupAttr, rg, resource);
+							canRead = AuthzResolver.isAuthorizedForAttribute(sess, ActionType.READ, groupAttr, richGroup, resource);
 						} else if (groupAttr.getNamespace().startsWith(AttributesManager.NS_GROUP_ATTR)) {
-							canRead = AuthzResolver.isAuthorizedForAttribute(sess, ActionType.READ, groupAttr, rg, null);
+							canRead = AuthzResolver.isAuthorizedForAttribute(sess, ActionType.READ, groupAttr, richGroup, null);
+						} else if (groupAttr.getNamespace().startsWith(AttributesManager.NS_MEMBER_GROUP_ATTR)) {
+							canRead = AuthzResolver.isAuthorizedForAttribute(sess, ActionType.READ, groupAttr, member, richGroup);
 						}
 						if(canRead) {
 							boolean isWritable = false;
 							if (groupAttr.getNamespace().startsWith(AttributesManager.NS_GROUP_RESOURCE_ATTR)) {
-								isWritable = AuthzResolver.isAuthorizedForAttribute(sess, ActionType.WRITE, groupAttr, rg, resource);
+								isWritable = AuthzResolver.isAuthorizedForAttribute(sess, ActionType.WRITE, groupAttr, richGroup, resource);
 							} else if (groupAttr.getNamespace().startsWith(AttributesManager.NS_GROUP_ATTR)) {
-								isWritable = AuthzResolver.isAuthorizedForAttribute(sess, ActionType.WRITE, groupAttr, rg, null);
+								isWritable = AuthzResolver.isAuthorizedForAttribute(sess, ActionType.WRITE, groupAttr, richGroup, null);
+							} else if (groupAttr.getNamespace().startsWith(AttributesManager.NS_MEMBER_GROUP_ATTR)) {
+								isWritable = AuthzResolver.isAuthorizedForAttribute(sess, ActionType.WRITE, groupAttr, member, richGroup);
 							}
 							groupAttr.setWritable(isWritable);
 							allowedGroupAttributes.add(groupAttr);
@@ -2251,9 +2262,9 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 						}
 					}
 				}
-				rg.setAttributes(allowedGroupAttributes);
+				richGroup.setAttributes(allowedGroupAttributes);
 			}
-			filteredRichGroups.add(rg);
+			filteredRichGroups.add(richGroup);
 		}
 		return filteredRichGroups;
 
@@ -2313,11 +2324,59 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 	}
 
 	@Override
+	public List<RichGroup> convertGroupsToRichGroupsWithAttributes(PerunSession sess, Member member, Resource resource, List<Group> groups, List<String> attrNames) throws InternalErrorException, GroupResourceMismatchException, MemberResourceMismatchException {
+		List<RichGroup> richGroups = new ArrayList<>();
+
+		//filter attr names for different namespaces (we need to process them separately)
+		List<String> groupAndGroupResourceAttrNames = new ArrayList<>();
+		List<String> memberGroupAttrNames = new ArrayList<>();
+		if(attrNames != null && !attrNames.isEmpty()) {
+			groupAndGroupResourceAttrNames = attrNames.stream().filter(attrName ->
+				attrName.startsWith(AttributesManager.NS_GROUP_RESOURCE_ATTR) || attrName.startsWith(AttributesManager.NS_GROUP_ATTR)).collect(Collectors.toList());
+			memberGroupAttrNames = attrNames.stream().filter(attrName -> attrName.startsWith(AttributesManager.NS_MEMBER_GROUP_ATTR)).collect(Collectors.toList());
+		}
+
+		for(Group group: groups) {
+			if(attrNames == null) {
+				//null means - we want all possible attributes
+				List<Attribute> attributes = new ArrayList<>();
+				attributes.addAll(getPerunBl().getAttributesManagerBl().getAttributes(sess, resource, group, true));
+				attributes.addAll(getPerunBl().getAttributesManagerBl().getAttributes(sess, member, group));
+				richGroups.add(new RichGroup(group, attributes));
+			} else if (attrNames.isEmpty()) {
+				//empty means we don't need any attributes
+				richGroups.add(new RichGroup(group, new ArrayList<>()));
+			} else {
+				//non-empty means - filter only these attributes if possible
+				List<Attribute> attributes = new ArrayList<>();
+				//if there is any group or group-resource attribute, add it
+				if (!groupAndGroupResourceAttrNames.isEmpty()) attributes.addAll(getPerunBl().getAttributesManagerBl().getAttributes(sess, resource, group, groupAndGroupResourceAttrNames, true));
+				//if there is any member-group attribute, add it
+				if (!memberGroupAttrNames.isEmpty()) attributes.addAll(getPerunBl().getAttributesManagerBl().getAttributes(sess, member, group, memberGroupAttrNames));
+
+				richGroups.add(new RichGroup(group, attributes));
+			}
+		}
+		return richGroups;
+	}
+
+	@Override
 	public List<RichGroup> getRichGroupsWithAttributesAssignedToResource(PerunSession sess, Resource resource, List<String> attrNames) throws InternalErrorException {
 		List<Group> assignedGroups = getPerunBl().getResourcesManagerBl().getAssignedGroups(sess, resource);
 		try {
 			return this.convertGroupsToRichGroupsWithAttributes(sess, resource, assignedGroups, attrNames);
 		} catch (GroupResourceMismatchException ex) {
+			throw new ConsistencyErrorException(ex);
+		}
+	}
+
+	@Override
+	public List<RichGroup> getRichGroupsWithAttributesAssignedToResource(PerunSession sess, Member member, Resource resource, List<String> attrNames) throws InternalErrorException {
+		List<Group> assignedGroups = getPerunBl().getResourcesManagerBl().getAssignedGroups(sess, resource);
+		assignedGroups.retainAll(perunBl.getGroupsManagerBl().getAllMemberGroups(sess, member));
+		try {
+			return this.convertGroupsToRichGroupsWithAttributes(sess, member, resource, assignedGroups, attrNames);
+		} catch (GroupResourceMismatchException | MemberResourceMismatchException ex) {
 			throw new ConsistencyErrorException(ex);
 		}
 	}
