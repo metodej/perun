@@ -6,7 +6,7 @@
 	   xmlns:tx="http://www.springframework.org/schema/tx"
 	   xmlns:ldap="http://www.springframework.org/schema/ldap"
        xsi:schemaLocation="
-http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
 http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
 http://www.springframework.org/schema/ldap http://www.springframework.org/schema/ldap/spring-ldap.xsd
 http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
@@ -362,7 +362,7 @@ http://www.springframework.org/schema/aop http://www.springframework.org/schema/
 		</property>
 	</bean>
 
-	<bean id="perunUser" class="cz.metacentrum.perun.ldapc.model.impl.PerunUserImpl">
+	<bean id="perunUser" class="cz.metacentrum.perun.ldapc.model.impl.PerunUserImpl" scope="prototype">
 		<property name="attributeDescriptions">
 			<!--  this list will be added to built-in defaultAttributeDescriptions -->
 			<list>
@@ -531,6 +531,26 @@ http://www.springframework.org/schema/aop http://www.springframework.org/schema/
 						<bean class="cz.metacentrum.perun.ldapc.model.impl.SingleAttributeValueExtractor">
 							<property name="namespace" value="urn:perun:user:attribute-def:def" />
 							<property name="name" value="elixirBonaFideStatus" />
+						</bean>
+					</property>
+				</bean>
+				<bean class="cz.metacentrum.perun.ldapc.model.impl.PerunAttributeDesc">
+					<property name="name" value="isCesnetEligible" />
+					<property name="required" value="false" />
+					<property name="singleValueExtractor">
+						<bean class="cz.metacentrum.perun.ldapc.model.impl.SingleAttributeValueExtractor">
+							<property name="namespace" value="urn:perun:user:attribute-def:def" />
+							<property name="name" value="isCesnetEligibleLastSeen" />
+						</bean>
+					</property>
+				</bean>
+				<bean class="cz.metacentrum.perun.ldapc.model.impl.PerunAttributeDesc">
+					<property name="name" value="loa" />
+					<property name="required" value="false" />
+					<property name="singleValueExtractor">
+						<bean class="cz.metacentrum.perun.ldapc.model.impl.SingleAttributeValueExtractor">
+							<property name="namespace" value="urn:perun:user:attribute-def:virt" />
+							<property name="name" value="loa" />
 						</bean>
 					</property>
 				</bean>

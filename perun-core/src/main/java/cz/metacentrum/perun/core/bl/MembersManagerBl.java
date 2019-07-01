@@ -1101,6 +1101,29 @@ public interface MembersManagerBl {
 	void checkMemberExists(PerunSession sess, Member member) throws InternalErrorException, MemberNotExistsException;
 
 	/**
+	 * Set date to which will be member suspended in his VO.
+	 *
+	 * For almost unlimited time please use time in the far future.
+	 *
+	 * @param sess
+	 * @param member member who will be suspended
+	 * @param suspendedTo date to which will be member suspended (after this date, he will not be affected by suspension any more)
+	 * @throws InternalErrorException
+	 */
+	void suspendMemberTo(PerunSession sess, Member member, Date suspendedTo) throws InternalErrorException;
+
+	/**
+	 * Remove suspend state from Member - remove date to which member should be considered as suspended in the VO.
+	 *
+	 * WARNING: this method will always succeed if member exists, because it will set date for suspension to null
+	 *
+	 * @param sess
+	 * @param member member for which the suspend state will be removed
+	 * @throws InternalErrorException
+	 */
+	void unsuspendMember(PerunSession sess, Member member) throws InternalErrorException;
+
+	/**
 	 * Return false if member has status INVALID or DISABLED. True in other cases.
 	 *
 	 * @param sess
@@ -1145,6 +1168,9 @@ public interface MembersManagerBl {
 	 * Validate all atributes for member and set member's status to VALID.
 	 * This method runs synchronously.
 	 *
+	 * Method runs in nested transaction.
+	 * As side effect, on success will change status of the object member.
+	 *
 	 * @param sess
 	 * @param member
 	 * @return membet with new status set
@@ -1170,6 +1196,8 @@ public interface MembersManagerBl {
 	/**
 	 * Set member status to invalid.
 	 *
+	 * As side effect it will change status of the object member.
+	 *
 	 * @param sess
 	 * @param member
 	 * @return member with new status set
@@ -1180,6 +1208,8 @@ public interface MembersManagerBl {
 
 	/**
 	 * Suspend member.
+	 *
+	 * As side effect it will change status of the object member.
 	 *
 	 * @param sess
 	 * @param member
@@ -1193,6 +1223,8 @@ public interface MembersManagerBl {
 	/**
 	 * Suspend member with reason for suspension.
 	 *
+	 * As side effect it will change status of the object member.
+	 *
 	 * @param sess
 	 * @param member
 	 * @param message
@@ -1205,18 +1237,26 @@ public interface MembersManagerBl {
 
 	/**
 	 * Set member's status to expired.
+	 * All attributes are validated if was in INVALID or DISABLED state before.
+	 * If validation ends with error, member keeps his old status.
+	 *
+	 * Method runs in nested transaction.
+	 * As side effect, on success will change status of the object member.
 	 *
 	 * @param sess
 	 * @param member
 	 * @return member with new status set
 	 *
 	 * @throws InternalErrorException
-	 * @throws MemberNotValidYetException
+	 * @throws WrongReferenceAttributeValueException
+	 * @throws WrongAttributeValueException
 	 */
-	Member expireMember(PerunSession sess, Member member) throws InternalErrorException, MemberNotValidYetException;
+	Member expireMember(PerunSession sess, Member member) throws InternalErrorException, WrongReferenceAttributeValueException, WrongAttributeValueException;
 
 	/**
 	 * Disable member.
+	 *
+	 * As side effect, on success will change status of the object member.
 	 *
 	 * @param sess
 	 * @param member

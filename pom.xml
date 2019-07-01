@@ -7,7 +7,7 @@
 	<!-- PERUN -->
 	<groupId>cz.metacentrum</groupId>
 	<artifactId>perun</artifactId>
-	<version>3.6.0-SNAPSHOT</version>
+	<version>3.7.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<!-- Spring Boot Starter Parent as parent project - this project inherits versions of dependencies and plugins -->
@@ -35,7 +35,6 @@
 		<module>perun-dispatcher</module>
 		<module>perun-engine</module>
 		<module>perun-voot</module>
-		<module>perun-auditer-exporter</module>
 		<module>perun-ldapc-initializer</module>
 		<module>perun-web-gui</module>
 		<module>perun-scim</module>
@@ -69,10 +68,9 @@
 		<commons-cli.version>1.4</commons-cli.version>
 		<commons-collections.version>3.2.2</commons-collections.version>
 		<dumbster.version>1.6</dumbster.version>
-		<expiringmap.version>0.4.3</expiringmap.version>
+		<expiringmap.version>0.5.9</expiringmap.version>
 		<flying-saucer-pdf.version>9.1.16</flying-saucer-pdf.version>
 		<google-api-services-admin-directory.version>directory_v1-rev103-1.24.1</google-api-services-admin-directory.version>
-		<graphviz.version>0.5.4</graphviz.version>
 		<hornetq.version>2.2.21.Final</hornetq.version>
 		<jackson1.version>1.9.13</jackson1.version>
 		<jboss-jms-api.version>1.1.0.GA</jboss-jms-api.version>

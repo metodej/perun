@@ -23,8 +23,6 @@ import cz.metacentrum.perun.rpc.deserializer.Deserializer;
 import cz.metacentrum.perun.rpc.deserializer.JsonDeserializer;
 import cz.metacentrum.perun.rpc.deserializer.UrlDeserializer;
 import cz.metacentrum.perun.rpc.serializer.PdfSerializer;
-import cz.metacentrum.perun.rpc.serializer.SvgGraphvizSerializer;
-import cz.metacentrum.perun.rpc.serializer.TextFileSerializer;
 import cz.metacentrum.perun.rpc.serializer.JsonSerializer;
 import cz.metacentrum.perun.rpc.serializer.JsonSerializerJSONP;
 import cz.metacentrum.perun.rpc.serializer.JsonSerializerJSONSIMPLE;
@@ -557,11 +555,7 @@ public class Api extends HttpServlet {
 					isJsonp = true;
 				}
 
-				if (ser instanceof TextFileSerializer) {
-					resp.addHeader("Content-Disposition", "attachment; filename=\"output.txt\"");
-				} else if (ser instanceof SvgGraphvizSerializer) {
-					resp.addHeader("Content-Disposition", "attachment; filename=\"output.svg\"");
-				} else if (ser instanceof PdfSerializer) {
+				if (ser instanceof PdfSerializer) {
 					resp.addHeader("Content-Disposition", "attachment; filename=\"output.pdf\"");
 				}
 
@@ -806,22 +800,11 @@ public class Api extends HttpServlet {
 			case jsonsimple:
 				serializer = new JsonSerializerJSONSIMPLE(out);
 				break;
-			case txt:
-				serializer = new TextFileSerializer(out);
-				break;
 			default:
 				throw new RpcException(RpcException.Type.UNKNOWN_SERIALIZER_FORMAT, format);
 		}
 
 		// handle special cases of returning file attachments to certain methods
-
-		if ("attributesManager".equals(manager)) {
-			if ("getAttributeModulesDependenciesGraphText".equals(method)) {
-				serializer = new TextFileSerializer(out);
-			} else if ("getAttributeModulesDependenciesGraphImage".equals(method)) {
-				serializer = new SvgGraphvizSerializer(out);
-			}
-		}
 
 		if ("usersManager".equals(manager)) {
 			if ("changePasswordRandom".equals(method)) {
@@ -856,8 +839,6 @@ public class Api extends HttpServlet {
 		json,
 		jsonp,
 		voot,
-		txt,
-		svg,
 		jsonsimple;
 
 		/**

@@ -107,9 +107,6 @@ import cz.metacentrum.perun.utils.graphs.generators.ModuleDependencyNodeGenerato
 import cz.metacentrum.perun.utils.graphs.generators.NoDuplicatedEdgesGraphGenerator;
 import cz.metacentrum.perun.utils.graphs.generators.NodeGenerator;
 import cz.metacentrum.perun.utils.graphs.serializers.GraphSerializer;
-import guru.nidi.graphviz.engine.Graphviz;
-import guru.nidi.graphviz.model.MutableGraph;
-import guru.nidi.graphviz.parse.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -2328,6 +2325,10 @@ public class AttributesManagerBlImpl implements AttributesManagerBl {
 			}
 			if (!Arrays.asList("def","opt").contains(attribute.getNamespace().split(":")[4])) {
 				throw new InternalErrorException("only 'def' and 'opt' attributes can be unique");
+			}
+			if(attribute.getType().equals(BeansUtils.largeStringClassName) ||
+					attribute.getType().equals(BeansUtils.largeArrayListClassName)) {
+				throw new InternalErrorException("large attributes cannot be marked unique");
 			}
 		}
 
@@ -7332,6 +7333,10 @@ public class AttributesManagerBlImpl implements AttributesManagerBl {
 		if(!Arrays.asList("def","opt").contains(attrDef.getNamespace().split(":")[4])) {
 			throw new InternalErrorException("only 'def' and 'opt' attributes can be converted to unique");
 		}
+		if(attrDef.getType().equals(BeansUtils.largeStringClassName) ||
+			attrDef.getType().equals(BeansUtils.largeArrayListClassName)) {
+			throw new InternalErrorException("large attributes cannot be marked unique");
+		}
 		log.info("converting attribute {} to unique",attrDef.getName());
 		attrDef.setUnique(true);
 		this.updateAttributeDefinition(session, attrDef);
@@ -7366,22 +7371,6 @@ public class AttributesManagerBlImpl implements AttributesManagerBl {
 	}
 
 	@Override
-	public Graphviz getAttributeModulesDependenciesGraphAsImage(PerunSession session) throws InternalErrorException {
-
-		String graphText = getAttributeModulesDependenciesGraphAsString(session, GraphTextFormat.DOT);
-
-		return convertDotStringGraph(graphText);
-	}
-
-	@Override
-	public Graphviz getAttributeModulesDependenciesGraphAsImage(PerunSession session, AttributeDefinition attributeDefinition) throws InternalErrorException {
-
-		String graphText = getAttributeModulesDependenciesGraphAsString(session, GraphTextFormat.DOT, attributeDefinition);
-
-		return convertDotStringGraph(graphText);
-	}
-
-	@Override
 	public Graph getAttributeModulesDependenciesGraph(PerunSession session) {
 		return getAttributeModulesDependenciesGraph(session, new ModuleDependencyNodeGenerator());
 	}
@@ -7391,32 +7380,12 @@ public class AttributesManagerBlImpl implements AttributesManagerBl {
 				.addEntitiesData(strongDependencies).withEdgeType(GraphEdge.Type.BOLD)
 				.addEntitiesData(dependencies).withEdgeType(GraphEdge.Type.DASHED);
 
-		return new NoDuplicatedEdgesGraphGenerator().generate(nodeGenerator, graphDefinition);
+		return new NoDuplicatedEdgesGraphGenerator<AttributeDefinition>().generate(nodeGenerator, graphDefinition);
 	}
 
 	@Override
 	public Map<AttributeDefinition, Set<AttributeDefinition>> getAllDependencies() {
 		return allDependencies;
-	}
-
-	/**
-	 * Converts DOT String graph representation to Graphviz.
-	 *
-	 * @param graphString graph string
-	 * @return converted graph
-	 * @throws InternalErrorException internal error
-	 */
-	private Graphviz convertDotStringGraph(String graphString) throws InternalErrorException {
-
-		MutableGraph graph;
-
-		try {
-			graph = Parser.read(graphString);
-		} catch (IOException e) {
-			throw new InternalErrorException("Generated invalid format of DOT graph.");
-		}
-
-		return Graphviz.fromGraph(graph);
 	}
 
 	// ------------ PRIVATE METHODS FOR ATTRIBUTE DEPENDENCIES LOGIC --------------

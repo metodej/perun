@@ -78,7 +78,7 @@ public class UsersManagerImpl implements UsersManagerImplApi {
 	protected final static String userExtSourceMappingSelectQuery = "user_ext_sources.id as user_ext_sources_id, user_ext_sources.login_ext as user_ext_sources_login_ext, " +
 		"user_ext_sources.user_id as user_ext_sources_user_id, user_ext_sources.loa as user_ext_sources_loa, user_ext_sources.created_at as user_ext_sources_created_at, user_ext_sources.created_by as user_ext_sources_created_by, " +
 		"user_ext_sources.modified_by as user_ext_sources_modified_by, user_ext_sources.modified_at as user_ext_sources_modified_at, " +
-		"user_ext_sources.created_by_uid as ues_created_by_uid, user_ext_sources.modified_by_uid as ues_modified_by_uid";
+		"user_ext_sources.created_by_uid as ues_created_by_uid, user_ext_sources.modified_by_uid as ues_modified_by_uid, user_ext_sources.last_access as ues_last_access";
 
 	private static final Map<String, Pattern> userExtSourcePersistentPatterns;
 
@@ -136,7 +136,8 @@ public class UsersManagerImpl implements UsersManagerImplApi {
 					rs.getString("user_ext_sources_created_at"), rs.getString("user_ext_sources_created_by"),
 					rs.getString("user_ext_sources_modified_at"), rs.getString("user_ext_sources_modified_by"),
 					rs.getInt("ues_created_by_uid") == 0 ? null : rs.getInt("ues_created_by_uid"),
-					rs.getInt("ues_modified_by_uid") == 0 ? null : rs.getInt("ues_modified_by_uid"));
+					rs.getInt("ues_modified_by_uid") == 0 ? null : rs.getInt("ues_modified_by_uid"),
+					rs.getString("ues_last_access"));
 		}
 	};
 
@@ -612,6 +613,20 @@ public class UsersManagerImpl implements UsersManagerImplApi {
 			return jdbc.queryForObject("select " + userExtSourceMappingSelectQuery + "," + ExtSourcesManagerImpl.extSourceMappingSelectQuery +
 					" from user_ext_sources left join ext_sources on user_ext_sources.ext_sources_id=ext_sources.id where" +
 					" user_ext_sources.id=?", USEREXTSOURCE_MAPPER, id);
+		} catch (EmptyResultDataAccessException e) {
+			throw new UserExtSourceNotExistsException(e);
+		} catch (RuntimeException e) {
+			throw new InternalErrorException(e);
+		}
+	}
+
+	@Override
+	public UserExtSource getUserExtSourceByUniqueAttributeValue(PerunSession sess, int attrId, String uniqueValue) throws InternalErrorException, UserExtSourceNotExistsException {
+		try {
+			return jdbc.queryForObject("select " + userExtSourceMappingSelectQuery + "," + ExtSourcesManagerImpl.extSourceMappingSelectQuery +
+				" from user_ext_sources left join ext_sources on user_ext_sources.ext_sources_id=ext_sources.id " +
+				" left join user_ext_source_attr_u_values on user_ext_source_attr_u_values.user_ext_source_id=user_ext_sources.id" +
+				" where user_ext_source_attr_u_values.attr_id=? and user_ext_source_attr_u_values.attr_value=?", USEREXTSOURCE_MAPPER, attrId, uniqueValue);
 		} catch (EmptyResultDataAccessException e) {
 			throw new UserExtSourceNotExistsException(e);
 		} catch (RuntimeException e) {

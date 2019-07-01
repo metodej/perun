@@ -1,4 +1,4 @@
--- database version 3.1.52(don't forget to update insert statement at the end of file)
+-- database version 3.1.54 (don't forget to update insert statement at the end of file)
 
 create user perunv3 identified by password;
 grant create session to perunv3;
@@ -253,6 +253,7 @@ create table members (
 	modified_by nvarchar2(1300) default user not null,
 	status char(1) default '0' not null, --status of membership
 	sponsored char(1) default '0' not null,
+	suspended_to date,
 	created_by_uid integer,
 	modified_by_uid integer,
 	constraint mem_pk primary key(id),
@@ -443,25 +444,6 @@ create table auditer_consumers (
 	constraint audcon_u unique(name)
 );
 
--- AUDITER_SUBSCRIBERS - registers recently processed events
-create table auditer_subscribers (
-	id integer not null,
-	name nvarchar2(256) not null,
-	last_processed_id integer,
-	--filters
-	filters clob,
-	created_at date default sysdate not null,
-	created_by nvarchar2(1300) default user not null,
-	modified_at date default sysdate not null,
-	modified_by nvarchar2(1300) default user not null,
-	created_by_uid integer,
-	modified_by_uid integer,
-	constraint audsub_pk primary key (id),
-	constraint audsub_u unique(name)
-);
-
-
-
 -- SERVICES - provided services, their atomic form
 create table services (
 	id integer not null,
@@ -613,6 +595,7 @@ create table application_form_items (
 	required char(1),          --value for item is mandatory
 	type nvarchar2(128),         --type of item
 	fed_attr nvarchar2(128),     --copied from federation attribute
+	src_attr nvarchar2(384),     --sourced from attribute
 	dst_attr nvarchar2(384),     --saved to attribute
 	regex nvarchar2(4000),       --regular expression for checking of value
 	created_by_uid integer,
@@ -1599,7 +1582,6 @@ create table authz (
 
 create sequence ATTR_NAMES_ID_SEQ nocache;
 create sequence AUDITER_CONSUMERS_ID_SEQ nocache;
-create sequence AUDITER_SUBSCRIBERS_ID_SEQ nocache;
 create sequence AUDITER_LOG_ID_SEQ nocache;
 create sequence AUDITER_LOG_JSON_ID_SEQ nocache;
 create sequence DESTINATIONS_ID_SEQ nocache;
@@ -1805,7 +1787,7 @@ CREATE INDEX ufauv_idx ON user_facility_attr_u_values (user_id, facility_id, att
 CREATE INDEX vauv_idx ON vo_attr_u_values (vo_id, attr_id) ;
 
 -- set initial Perun DB version
-insert into configurations values ('DATABASE VERSION','3.1.52');
+insert into configurations values ('DATABASE VERSION','3.1.54');
 
 -- insert membership types
 insert into membership_types (id, membership_type, description) values (1, 'DIRECT', 'Member is directly added into group');

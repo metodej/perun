@@ -136,6 +136,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static cz.metacentrum.perun.core.impl.PerunLocksUtils.lockGroupMembership;
+
 /**
  * GroupsManager business logic
  *
@@ -155,6 +157,7 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 	private static final String A_G_D_EXPIRATION_RULES = AttributesManager.NS_GROUP_ATTR_DEF + ":groupMembershipExpirationRules";
 	private static final String A_MG_D_MEMBERSHIP_EXPIRATION = AttributesManager.NS_MEMBER_GROUP_ATTR_DEF + ":groupMembershipExpiration";
 	private static final String A_M_V_LOA = AttributesManager.NS_MEMBER_ATTR_VIRT + ":loa";
+	private static final List<Status> statusesAffectedBySynchronization = Arrays.asList(Status.DISABLED, Status.EXPIRED, Status.INVALID);
 
 	private final Integer maxConcurrentGroupsStructuresToSynchronize;
 	private final PerunBeanProcessingPool<Group> poolOfGroupsStructuresToBeSynchronized;
@@ -848,6 +851,8 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 	 */
 	protected void addDirectMember(PerunSession sess, Group group, Member member) throws InternalErrorException, AlreadyMemberException, WrongAttributeValueException, WrongReferenceAttributeValueException, GroupNotExistsException {
 
+		lockGroupMembership(group, Collections.singletonList(member));
+
 		if(this.groupsManagerImpl.isDirectGroupMember(sess, group, member)) throw new AlreadyMemberException(member);
 
 		boolean memberWasIndirectInGroup = this.isGroupMember(sess, group, member);
@@ -895,6 +900,8 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 		// save list of old group members
 		List<Member> oldMembers = this.getGroupMembers(sess, group);
 		List<Member> membersToAdd = new ArrayList<>(members);
+
+		lockGroupMembership(group, members);
 
 		for (Member member : membersToAdd) {
 			groupsManagerImpl.addMember(sess, group, member, MembershipType.INDIRECT, sourceGroupId);
@@ -946,6 +953,9 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 	 */
 	private List<Member> removeIndirectMembers(PerunSession sess, Group group, List<Member> members, int sourceGroupId) throws InternalErrorException, WrongAttributeValueException, WrongReferenceAttributeValueException, NotGroupMemberException {
 		List<Member> membersToRemove = new ArrayList<>(members);
+
+		lockGroupMembership(group, membersToRemove);
+
 		for (Member member: membersToRemove) {
 			member.setSourceGroupId(sourceGroupId);
 			groupsManagerImpl.removeMember(sess, group, member);
@@ -991,6 +1001,8 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 	}
 
 	private void removeDirectMember(PerunSession sess, Group group, Member member) throws InternalErrorException, NotGroupMemberException, GroupNotExistsException, WrongAttributeValueException, WrongReferenceAttributeValueException {
+
+		lockGroupMembership(group, Collections.singletonList(member));
 
 		member.setSourceGroupId(group.getId());
 		getGroupsManagerImpl().removeMember(sess, group, member);
@@ -1099,12 +1111,12 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 
 	@Override
 	public List<Member> getGroupMembersExceptInvalid(PerunSession sess, Group group) throws InternalErrorException {
-		return getGroupsManagerImpl().getGroupMembers(sess, group, Collections.singletonList(Status.INVALID), true);
+		return this.filterMembersByMembershipTypeInGroup(getGroupsManagerImpl().getGroupMembers(sess, group, Collections.singletonList(Status.INVALID), true));
 	}
 
 	@Override
 	public List<Member> getGroupMembersExceptInvalidAndDisabled(PerunSession sess, Group group) throws InternalErrorException {
-		return getGroupsManagerImpl().getGroupMembers(sess, group, Arrays.asList(Status.INVALID, Status.DISABLED), true);
+		return this.filterMembersByMembershipTypeInGroup(getGroupsManagerImpl().getGroupMembers(sess, group, Arrays.asList(Status.INVALID, Status.DISABLED), true));
 	}
 
 	@Override
@@ -1656,9 +1668,9 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 		updateExistingGroupsWhileSynchronization(sess, baseGroup, groupsToUpdate, skippedGroups);
 		removeFormerGroupsWhileSynchronization(sess, baseGroup, groupsToRemove, skippedGroups);
 
-		log.info("Group structure synchronization {}: ended.", baseGroup);
+		setUpSynchronizationAttributesForAllSubGroups(sess, baseGroup, source);
 
-		synchronizeSubGroupsMembers(sess, baseGroup, source);
+		log.info("Group structure synchronization {}: ended.", baseGroup);
 
 		return skippedGroups;
 	}
@@ -1702,18 +1714,18 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 		Iterator<GroupSynchronizerThread> threadIterator = groupSynchronizerThreads.iterator();
 		while(threadIterator.hasNext()) {
 			GroupSynchronizerThread thread = threadIterator.next();
-			long threadStart = thread.getStartTime();
-			//If thread start time is 0, this thread is waiting for another job, skip it
-			if(threadStart == 0) continue;
 
+			long threadStart = thread.getStartTime();
 			long timeDiff = System.currentTimeMillis() - threadStart;
+
 			//If thread was interrupted by anything, remove it from the pool of active threads
-			if (thread.isInterrupted()) {
+			if (thread.isInterrupted() || !thread.isAlive()) {
 				numberOfNewlyRemovedThreads++;
 				threadIterator.remove();
-			} else if(timeDiff/1000/60 > timeout) {
+			} else if (threadStart != 0 && timeDiff/1000/60 > timeout) {
+				//If thread start time is 0, this thread is waiting for another job, skip it
 				// If the time is greater than timeout set in the configuration file (in minutes), interrupt and remove this thread from pool
-				log.error("One of threads was interrupted because of timeout!");
+				log.error("Thread was interrupted while synchronizing the group {} because of timeout!", thread.getGroup());
 				thread.interrupt();
 				threadIterator.remove();
 				numberOfNewlyRemovedThreads++;
@@ -1783,6 +1795,7 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 		private final PerunBl perunBl;
 		private final PerunSession sess;
 		private volatile long startTime;
+		private Group group;
 
 		public GroupSynchronizerThread(PerunSession sess) throws InternalErrorException {
 			// take only reference to perun
@@ -1809,7 +1822,6 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 				boolean failedDueToException = false;
 
 				//Take another group from the pool to synchronize it
-				Group group;
 				try {
 					group = poolOfGroupsToBeSynchronized.takeJob();
 				} catch (InterruptedException ex) {
@@ -1862,6 +1874,10 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 			}
 		}
 
+		public Group getGroup() {
+			return group;
+		}
+
 		public long getStartTime() {
 			return startTime;
 		}
@@ -1906,6 +1922,7 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 		private final PerunBl perunBl;
 		private final PerunSession sess;
 		private volatile long startTime;
+		private Group group;
 
 		/**
 		 * Take only reference to perun
@@ -1933,7 +1950,6 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 				String skippedGroupsMessage = null;
 				boolean failedDueToException = false;
 
-				Group group;
 				try {
 					group = poolOfGroupsStructuresToBeSynchronized.takeJob();
 				} catch (InterruptedException ex) {
@@ -1972,6 +1988,10 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 					log.debug("GroupStructureSynchronizerThread finished for group: {}", group);
 				}
 			}
+		}
+
+		public Group getGroup() {
+			return group;
 		}
 
 		public long getStartTime() {
@@ -3049,56 +3069,48 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 			}
 
 			//Set correct member Status
-			// If the member has expired or disabled status, try to expire/validate him (depending on expiration date)
-			if (richMember.getStatus().equals(Status.DISABLED) || richMember.getStatus().equals(Status.EXPIRED)) {
+			Status memberStatus = richMember.getStatus();
+			if (statusesAffectedBySynchronization.contains(memberStatus)) {
+				//prepare variables with information about member's expiration
+				boolean memberHasExpiration;
+				boolean memberExpiredInPast = false;
+
 				Date now = new Date();
+				Date currentMembershipExpirationDate = now;
 				Attribute membershipExpiration = getPerunBl().getAttributesManagerBl().getAttribute(sess, richMember, AttributesManager.NS_MEMBER_ATTR_DEF + ":membershipExpiration");
-				if(membershipExpiration.getValue() != null) {
+				//Check if member has not empty expiration date
+				memberHasExpiration = membershipExpiration.getValue() != null;
+
+				if (memberHasExpiration) {
+					//Check if member has expiration date in the past or not (default is false even if he doesn't have expiration at all)
 					try {
-						Date currentMembershipExpirationDate = BeansUtils.getDateFormatterWithoutTime().parse((String) membershipExpiration.getValue());
-						if (currentMembershipExpirationDate.before(now)) {
-							//disabled members which are after expiration date will be expired
-							if (richMember.getStatus().equals(Status.DISABLED)) {
-								try {
-									perunBl.getMembersManagerBl().expireMember(sess, richMember);
-									log.info("Switching member id {} to EXPIRE state, due to expiration {}.", richMember.getId(), membershipExpiration.getValue());
-									log.debug("Switching member to EXPIRE state, additional info: membership expiration date='{}', system now date='{}'", currentMembershipExpirationDate, now);
-								} catch (MemberNotValidYetException e) {
-									log.error("Consistency error while trying to expire member id {}, exception {}", richMember.getId(), e);
-								}
-							}
-						} else {
-							//disabled and expired members which are before expiration date will be validated
-							try {
-								perunBl.getMembersManagerBl().validateMember(sess, richMember);
-								log.info("Switching member id {} to VALID state, due to expiration {}.", richMember.getId(), membershipExpiration.getValue());
-								log.debug("Switching member to VALID state, additional info: membership expiration date='{}', system now date='{}'", currentMembershipExpirationDate, now);
-							} catch (WrongAttributeValueException | WrongReferenceAttributeValueException e) {
-								log.error("Error during validating member id {}, exception {}", richMember.getId(), e);
-							}
-						}
+						currentMembershipExpirationDate = BeansUtils.getDateFormatterWithoutTime().parse((String) membershipExpiration.getValue());
+						memberExpiredInPast = currentMembershipExpirationDate.before(now);
 					} catch (ParseException ex) {
-						log.error("Group synchronization: memberId {} expiration String cannot be parsed, exception {}.",richMember.getId(), ex);
+						log.error("Group synchronization: memberId {} expiration String cannot be parsed, exception {}.", richMember.getId(), ex);
 					}
 				}
-			}
 
-			// If the member has INVALID status, try to validate the member
-			try {
-				if (richMember.getStatus().equals(Status.INVALID)) {
-					getPerunBl().getMembersManagerBl().validateMember(sess, richMember);
+				if ((Status.DISABLED.equals(memberStatus) || Status.INVALID.equals(memberStatus)) && memberHasExpiration && memberExpiredInPast) {
+					//If member has expiration in the past (should be expired now) and is in other state than expired, expire him
+					try {
+						//if success, this method will change status of member as side effect
+						perunBl.getMembersManagerBl().expireMember(sess, richMember);
+						log.info("Switching member id {} to EXPIRE state, due to expiration {}.", richMember.getId(), membershipExpiration.getValue());
+						log.debug("Switching member to EXPIRE state, additional info: membership expiration date='{}', system now date='{}'", currentMembershipExpirationDate, now);
+					} catch (WrongReferenceAttributeValueException | WrongAttributeValueException e) {
+						log.error("Consistency error while trying to expire member id {}, exception {}", richMember.getId(), e);
+					}
+				} else if ((memberHasExpiration && !memberExpiredInPast) || !memberHasExpiration) {
+					//If member shouldn't be expired, validate him (don't have expiration at all or expire in the future from now)
+					try {
+						perunBl.getMembersManagerBl().validateMember(sess, richMember);
+						log.info("Switching member id {} to VALID state, due to expiration {}.", richMember.getId(), membershipExpiration.getValue());
+						log.debug("Switching member to VALID state, additional info: membership expiration date='{}', system now date='{}'", currentMembershipExpirationDate, now);
+					} catch (WrongAttributeValueException | WrongReferenceAttributeValueException e) {
+						log.error("Error during validating member id {}, exception {}", richMember.getId(), e);
+					}
 				}
-			} catch (WrongAttributeValueException | WrongReferenceAttributeValueException e) {
-				log.info("Member id {} will stay in INVALID state, because there was problem with attributes {}.", richMember.getId(), e);
-			}
-
-			// If the member has still DISABLED status, try to validate the member
-			try {
-				if (richMember.getStatus().equals(Status.DISABLED)) {
-					getPerunBl().getMembersManagerBl().validateMember(sess, richMember);
-				}
-			} catch (WrongAttributeValueException | WrongReferenceAttributeValueException e) {
-				log.info("Switching member id {} into INVALID state from DISABLED, because there was problem with attributes {}.", richMember.getId(), e);
 			}
 		}
 	}
@@ -3121,6 +3133,9 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 	 * @throws InternalErrorException if some internal error occurs
 	 */
 	private void addMissingMembersWhileSynchronization(PerunSession sess, Group group, List<Candidate> candidatesToAdd, List<String> overwriteUserAttributesList, List<String> mergeMemberAttributesList, List<String> skippedMembers) throws InternalErrorException {
+		//sort candidates to prevent deadlocks during member locking
+		//IMPORTANT: Candidates sorting may produce a different result than members sorting, thus there is a potential risk of creating a deadlock
+		Collections.sort(candidatesToAdd);
 		// Now add missing members
 		for (Candidate candidate: candidatesToAdd) {
 			Member member;
@@ -3235,6 +3250,8 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 			log.error("Attribute {} doesn't exists.", A_G_D_AUTHORITATIVE_GROUP);
 		}
 
+		//sort members to prevent deadlocks during member locking
+		Collections.sort(membersToRemove);
 		//Second remove members (use authoritative group where is needed)
 		for (RichMember member: membersToRemove) {
 			// Member is missing in the external group, so remove him from the perun group
@@ -3359,7 +3376,7 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 	}
 
 	/**
-	 * Synchronize members for all subgroups of given base group
+	 * Set up attributes, which are necessary for members synchronization,for all subgroups of given base group.
 	 *
 	 * Method used by group structure synchronization
 	 *
@@ -3372,23 +3389,24 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 	 * @throws WrongAttributeValueException
 	 * @throws WrongReferenceAttributeValueException
 	 */
-	private void synchronizeSubGroupsMembers(PerunSession sess, Group baseGroup, ExtSource source) throws InternalErrorException, AttributeNotExistsException, WrongAttributeAssignmentException, WrongAttributeValueException, WrongReferenceAttributeValueException {
-		List<Group> groupsForMemberSynchronization = getAllSubGroups(sess, baseGroup);
+	private void setUpSynchronizationAttributesForAllSubGroups(PerunSession sess, Group baseGroup, ExtSource source) throws InternalErrorException, AttributeNotExistsException, WrongAttributeAssignmentException, WrongAttributeValueException, WrongReferenceAttributeValueException {
+		Attribute baseMembersQuery = getPerunBl().getAttributesManagerBl().getAttribute(sess, baseGroup, GroupsManager.GROUPMEMBERSQUERY_ATTRNAME);
 
-		Attribute membersQueryAttribute = getPerunBl().getAttributesManagerBl().getAttribute(sess, baseGroup, GroupsManager.GROUPMEMBERSQUERY_ATTRNAME);
-		Attribute baseMemberExtsource = getPerunBl().getAttributesManagerBl().getAttribute(sess, baseGroup, GroupsManager.GROUPMEMBERSEXTSOURCE_ATTRNAME);
-
-		if (membersQueryAttribute.getValue() == null) {
+		if (baseMembersQuery.getValue() == null) {
 			throw new WrongAttributeValueException("Group members query attribute is not set for base group " + baseGroup + "!");
 		}
 
-		//Order subGroups from (leaf groups are first)
-		groupsForMemberSynchronization.sort((g1, g2) -> {
-			int g1size = g1.getName().split(":").length;
-			int g2size = g2.getName().split(":").length;
+		Attribute membersQueryAttribute = new Attribute(getPerunBl().getAttributesManagerBl().getAttributeDefinition(sess, GroupsManager.GROUPMEMBERSQUERY_ATTRNAME));
+		Attribute baseMemberExtsource = getPerunBl().getAttributesManagerBl().getAttribute(sess, baseGroup, GroupsManager.GROUPMEMBERSEXTSOURCE_ATTRNAME);
+		Attribute lightWeightSynchronization = getPerunBl().getAttributesManagerBl().getAttribute(sess, baseGroup, GroupsManager.GROUPLIGHTWEIGHTSYNCHRONIZATION_ATTRNAME);
+		Attribute synchronizationInterval = getPerunBl().getAttributesManagerBl().getAttribute(sess, baseGroup, GroupsManager.GROUPSYNCHROINTERVAL_ATTRNAME);
+		Attribute extSourceNameAttr = new Attribute(getPerunBl().getAttributesManagerBl().getAttributeDefinition(sess, GroupsManager.GROUPEXTSOURCE_ATTRNAME));
+		Attribute synchroEnabled = new Attribute(getPerunBl().getAttributesManagerBl().getAttributeDefinition(sess, GroupsManager.GROUPSYNCHROENABLED_ATTRNAME));
 
-			return g1size - g2size;
-		});
+		extSourceNameAttr.setValue(source.getName());
+		synchroEnabled.setValue("true");
+
+		List<Group> groupsForMemberSynchronization = getAllSubGroups(sess, baseGroup);
 
 		//for each group set attributes for members synchronization, synchronize them and save the result
 		for (Group group: groupsForMemberSynchronization) {
@@ -3399,54 +3417,14 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 				} catch (ExtSourceAlreadyAssignedException e) {
 					log.info("ExtSource already assigned to group: {}", group);
 				}
-				Attribute extSourceNameAttr = getPerunBl().getAttributesManagerBl().getAttribute(sess, group, GroupsManager.GROUPEXTSOURCE_ATTRNAME);
-				extSourceNameAttr.setValue(source.getName());
 				getPerunBl().getAttributesManagerBl().setAttribute(sess, group, extSourceNameAttr);
 			}
 
-			Attribute membersQueryForGroup = getPerunBl().getAttributesManagerBl().getAttribute(sess, group, GroupsManager.GROUPMEMBERSQUERY_ATTRNAME);
-			membersQueryForGroup.setValue(membersQueryAttribute.getValue().toString().replace("?", group.getShortName()));
-			getPerunBl().getAttributesManagerBl().setAttribute(sess, group, membersQueryForGroup);
+			membersQueryAttribute.setValue(baseMembersQuery.getValue().toString().replace("?", group.getShortName()));
 
-			Attribute groupMemberExtsource = getPerunBl().getAttributesManagerBl().getAttribute(sess, baseGroup, GroupsManager.GROUPMEMBERSEXTSOURCE_ATTRNAME);
-			groupMemberExtsource.setValue(baseMemberExtsource.getValue());
-			getPerunBl().getAttributesManagerBl().setAttribute(sess, group, groupMemberExtsource);
-
-			synchronizeMembersAndSaveResult(sess, group);
+			getPerunBl().getAttributesManagerBl().setAttributes(sess, group, Arrays.asList(baseMemberExtsource, lightWeightSynchronization, synchronizationInterval, synchroEnabled, membersQueryAttribute));
 		}
 
-	}
-
-	/**
-	 * Synchronize members under group and save information about it
-	 *
-	 * Method used by group structure synchronization
-	 *
-	 * @param sess perun session
-	 * @param group under which will be members synchronized
-	 */
-	private void synchronizeMembersAndSaveResult(PerunSession sess, Group group) {
-		String exceptionMessage = null;
-		String skippedMembersMessage = null;
-		boolean failedDueToException = false;
-		try {
-			List<String> skippedMembers = perunBl.getGroupsManagerBl().synchronizeGroup(sess, group);
-			skippedMembersMessage = prepareSkippedObjectsMessage(skippedMembers, "members");
-			exceptionMessage = skippedMembersMessage;
-
-		} catch (Exception e) {
-			failedDueToException = true;
-			exceptionMessage = "Cannot synchronize group ";
-			log.error(exceptionMessage + group, e);
-			exceptionMessage += "due to exception: " + e.getClass().getName() + " => " + e.getMessage();
-		} finally {
-			try {
-				perunBl.getGroupsManagerBl().saveInformationAboutGroupSynchronizationInNestedTransaction(sess, group, failedDueToException, exceptionMessage);
-			} catch (Exception ex) {
-				log.error("When synchronization group " + group + ", exception was thrown.", ex);
-				log.info("Info about exception from synchronization: " + skippedMembersMessage);
-			}
-		}
 	}
 
 	/**
@@ -3488,16 +3466,18 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 		Iterator<GroupStructureSynchronizerThread> threadIterator = groupStructureSynchronizerThreads.iterator();
 		while(threadIterator.hasNext()) {
 			GroupStructureSynchronizerThread thread = threadIterator.next();
-			long threadStart = thread.getStartTime();
-			//If the thread start time is 0, this thread is waiting for another job, skip it
-			if (threadStart == 0) continue;
 
+			long threadStart = thread.getStartTime();
 			long timeDiff = System.currentTimeMillis() - threadStart;
-			if (thread.isInterrupted()) {
+
+			//If thread was interrupted by anything, remove it from the pool of active threads
+			if (thread.isInterrupted() || !thread.isAlive()) {
 				numberOfNewlyRemovedThreads++;
 				threadIterator.remove();
-			} else if(timeDiff/1000/60 > timeoutMinutes) {
-				log.error("One of threads was interrupted because of timeout!");
+			} else if (threadStart != 0 && timeDiff/1000/60 > timeoutMinutes) {
+				//If thread start time is 0, this thread is waiting for another job, skip it
+				// If the time is greater than timeout set in the configuration file (in minutes), interrupt and remove this thread from pool
+				log.error("Thread was interrupted while synchronizing the group structure {} because of timeout!", thread.getGroup());
 				thread.interrupt();
 				threadIterator.remove();
 				numberOfNewlyRemovedThreads++;
@@ -4582,7 +4562,6 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 	 * Checks user's loa for expiration
 	 *
 	 * @param sess session
-	 * @param memberLoa
 	 * @param membershipExpirationRules
 	 * @param membershipExpirationAttribute
 	 * @param member

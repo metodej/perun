@@ -63,6 +63,7 @@ public class CoreConfig {
 	private String rtServiceuserPassword;
 	private String rtServiceuserUsername;
 	private String rtUrl;
+	private String rtSendToMail;
 	private String smsProgram;
 	private String userExtSourcesPersistent;
 	private List<String> allowedCorsDomains;
@@ -487,6 +488,11 @@ public class CoreConfig {
 					attr.setDescription("Entitlements of user (aka group memberships).");
 					attr.setType(BeansUtils.largeStringClassName);
 					break;
+				case "assurance":
+					attr.setDisplayName("eduPersonAssurance");
+					attr.setDescription("Assurance about user as defined at: https://wiki.refeds.org/display/ASS/REFEDS+Assurance+Framework+ver+1.0");
+					attr.setType(BeansUtils.largeStringClassName);
+					break;
 				case "dn":
 					attr.setDisplayName("certificate DN");
 					attr.setDescription("Distinguished Name from X509 digital certificate");
@@ -601,4 +607,11 @@ public class CoreConfig {
 		this.autocreatedNamespaces = autocreatedNamespaces;
 	}
 
+	public void setRtSendToMail(String rtSendToMail) {
+		this.rtSendToMail = rtSendToMail;
+	}
+
+	public String getRtSendToMail() {
+		return rtSendToMail;
+	}
 }

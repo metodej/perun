@@ -20,13 +20,18 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Module for VOs managing LifescienceHostel
+ * Module for VOs managing LifeScience Hostel
  *
  * @author Pavel Zlamal <256627@mail.muni.cz>
+ * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
  */
 public class LifescienceHostel implements RegistrarModule {
 
 	final static Logger log = LoggerFactory.getLogger(LifescienceHostel.class);
+
+	private final static String LIFESCIENCE_HOSTEL_NS = "login-namespace:lifescience-hostel";
+	private final static String LS_HOSTEL_SCOPE = "@lifescience-hostel.org";
+	private final static String LS_HOSTEL_EXT_SOURCE_NAME = "https://login.bbmri-eric.eu/lshostel/";
 
 	private RegistrarManager registrar;
 
@@ -56,10 +61,12 @@ public class LifescienceHostel implements RegistrarModule {
 
 		} else {
 
-			Attribute userLogin = perun.getAttributesManagerBl().getAttribute(session, user, AttributesManager.NS_USER_ATTR_DEF + ":login-namespace:lifescience-hostel");
+			Attribute userLogin = perun.getAttributesManagerBl().getAttribute(session, user, AttributesManager.NS_USER_ATTR_DEF + ":" + LIFESCIENCE_HOSTEL_NS);
 			if (userLogin != null && userLogin.getValue() != null) {
-				ExtSource extSource = perun.getExtSourcesManagerBl().getExtSourceByName(session, "https://login.bbmri-eric.eu/lshostel/");
-				UserExtSource ues = new UserExtSource(extSource, userLogin.valueAsString() + "@lifescience-hostel.org");
+				ExtSource extSource = perun.getExtSourcesManagerBl().getExtSourceByName(session, LS_HOSTEL_EXT_SOURCE_NAME);
+				// as user email will be used as login, we want to get rid of all '@' characters - change them to '_'
+				String modifiedLogin = userLogin.valueAsString().replace('@', '_');
+				UserExtSource ues = new UserExtSource(extSource, modifiedLogin + LS_HOSTEL_SCOPE);
 				ues.setLoa(0);
 
 				try {

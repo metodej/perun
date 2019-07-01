@@ -56,6 +56,7 @@ public class CreateFormItemTabItem implements TabItem {
 	private ArrayList<ApplicationFormItem> sourceList;
 
 	private JsonCallbackEvents events;
+	private boolean forGroup = false;
 
 	public static final Map<String, String> inputTypes;
 	static {
@@ -92,8 +93,27 @@ public class CreateFormItemTabItem implements TabItem {
 		this.events = events;
 	}
 
+	/**
+	 * Creates a tab instance
+	 */
+	public CreateFormItemTabItem(ArrayList<ApplicationFormItem> sourceList, boolean forGroup, JsonCallbackEvents events) {
+		this.sourceList = sourceList;
+		this.forGroup = forGroup;
+		this.events = events;
+	}
+
 	public boolean isPrepared() {
 		return true;
+	}
+
+	@Override
+	public boolean isRefreshParentOnClose() {
+		return false;
+	}
+
+	@Override
+	public void onClose() {
+
 	}
 
 	public Widget draw() {
@@ -232,7 +252,7 @@ public class CreateFormItemTabItem implements TabItem {
 		menu.addWidget(TabMenu.getPredefinedButton(ButtonType.CANCEL, "", new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent clickEvent) {
-				session.getTabManager().closeTab(tab, false);
+				session.getTabManager().closeTab(tab, isRefreshParentOnClose());
 			}
 		}));
 
@@ -266,7 +286,7 @@ public class CreateFormItemTabItem implements TabItem {
 		item.setOrdnum(positionToAdd);
 		sourceList.add(positionToAdd, item);
 
-		session.getTabManager().addTabToCurrentTab(new EditFormItemTabItem(item, events));
+		session.getTabManager().addTabToCurrentTab(new EditFormItemTabItem(item, forGroup, events));
 
 		events.onFinished(item);
 

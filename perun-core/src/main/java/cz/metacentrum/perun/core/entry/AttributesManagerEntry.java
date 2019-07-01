@@ -44,7 +44,7 @@ import cz.metacentrum.perun.core.bl.AttributesManagerBl;
 import cz.metacentrum.perun.core.bl.PerunBl;
 import cz.metacentrum.perun.core.impl.Utils;
 import cz.metacentrum.perun.utils.graphs.GraphTextFormat;
-import guru.nidi.graphviz.engine.Graphviz;
+import cz.metacentrum.perun.utils.graphs.GraphDTO;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -3969,43 +3969,23 @@ public class AttributesManagerEntry implements AttributesManager {
 	}
 
 	@Override
-	public String getModulesDependenciesGraphText(PerunSession session, GraphTextFormat format) throws InternalErrorException, PrivilegeException {
+	public GraphDTO getModulesDependenciesGraph(PerunSession session, GraphTextFormat format) throws InternalErrorException, PrivilegeException {
 		if (!AuthzResolver.isAuthorized(session, Role.PERUNADMIN)) {
 			throw new PrivilegeException("This operation can be done only by PerunAdmin.");
 		}
 
-		return attributesManagerBl.getAttributeModulesDependenciesGraphAsString(session, format);
+		return new GraphDTO(attributesManagerBl.getAttributeModulesDependenciesGraphAsString(session, format), format.name());
 	}
 
 	@Override
-	public String getModulesDependenciesGraphText(PerunSession session, GraphTextFormat format, String attributeName) throws InternalErrorException, PrivilegeException, AttributeNotExistsException {
+	public GraphDTO getModulesDependenciesGraph(PerunSession session, GraphTextFormat format, String attributeName) throws InternalErrorException, PrivilegeException, AttributeNotExistsException {
 		if (!AuthzResolver.isAuthorized(session, Role.PERUNADMIN)) {
 			throw new PrivilegeException("This operation can be done only by PerunAdmin.");
 		}
 
 		AttributeDefinition definition = attributesManagerBl.getAttributeDefinition(session, attributeName);
 
-		return attributesManagerBl.getAttributeModulesDependenciesGraphAsString(session, format, definition);
-	}
-
-	@Override
-	public Graphviz getModulesDependenciesGraphImage(PerunSession session) throws InternalErrorException, PrivilegeException {
-		if (!AuthzResolver.isAuthorized(session, Role.PERUNADMIN)) {
-			throw new PrivilegeException("This operation can be done only by PerunAdmin.");
-		}
-
-		return attributesManagerBl.getAttributeModulesDependenciesGraphAsImage(session);
-	}
-
-	@Override
-	public Graphviz getModulesDependenciesGraphImage(PerunSession session, String attributeName) throws InternalErrorException, PrivilegeException, AttributeNotExistsException {
-		if (!AuthzResolver.isAuthorized(session, Role.PERUNADMIN)) {
-			throw new PrivilegeException("This operation can be done only by PerunAdmin.");
-		}
-
-		AttributeDefinition definition = attributesManagerBl.getAttributeDefinition(session, attributeName);
-
-		return attributesManagerBl.getAttributeModulesDependenciesGraphAsImage(session, definition);
+		return new GraphDTO(attributesManagerBl.getAttributeModulesDependenciesGraphAsString(session, format, definition), format.name());
 	}
 
 	public PerunBl getPerunBl() {
