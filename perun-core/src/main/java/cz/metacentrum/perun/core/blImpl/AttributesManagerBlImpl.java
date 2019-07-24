@@ -458,6 +458,58 @@ public class AttributesManagerBlImpl implements AttributesManagerBl {
 	}
 
 	@Override
+	public List<Attribute> getAttributes(PerunSession sess, Resource resource, Group group, Member member, List<String> attrNames) throws InternalErrorException, GroupResourceMismatchException, MemberResourceMismatchException {
+		List<Attribute> attributes = new ArrayList<>();
+		if (attrNames.isEmpty()) return attributes;
+
+		Facility facility = getPerunBl().getResourcesManagerBl().getFacility(sess, resource);
+
+		List<String> groupAndGroupResourceAttrNames = new ArrayList<>();
+		List<String> memberGroupAttrNames = new ArrayList<>();
+		List<String> memberResourceAttrNames = new ArrayList<>();
+		List<String> facilityAttrNames = new ArrayList<>();
+		List<String> resourceAttrNames = new ArrayList<>();
+
+		//sort attribute names by namespaces
+		for(String attrName : attrNames) {
+			if (attrName.startsWith(NS_GROUP_ATTR)) {
+				groupAndGroupResourceAttrNames.add(attrName);
+			} else if (attrName.startsWith(NS_GROUP_RESOURCE_ATTR)) {
+				groupAndGroupResourceAttrNames.add(attrName);
+			} else if (attrName.startsWith(NS_MEMBER_GROUP_ATTR)) {
+				memberGroupAttrNames.add(attrName);
+			} else if (attrName.startsWith(NS_RESOURCE_ATTR)) {
+				resourceAttrNames.add(attrName);
+			} else if (attrName.startsWith(NS_MEMBER_RESOURCE_ATTR)) {
+				memberResourceAttrNames.add(attrName);
+			} else if (attrName.startsWith(NS_USER_ATTR)) {
+				memberResourceAttrNames.add(attrName);
+			} else if (attrName.startsWith(NS_MEMBER_ATTR)) {
+				memberResourceAttrNames.add(attrName);
+			} else if (attrName.startsWith(NS_FACILITY_ATTR)) {
+				facilityAttrNames.add(attrName);
+			} else if (attrName.startsWith(NS_USER_FACILITY_ATTR)) {
+				memberResourceAttrNames.add(attrName);
+			} else {
+				throw new ConsistencyErrorException("One of asked attribute names is not from supported namespace : " + attrName);
+			}
+		}
+
+		//return all group and group_resource attributes
+		if(!groupAndGroupResourceAttrNames.isEmpty()) attributes.addAll(this.getAttributes(sess, resource, group, groupAndGroupResourceAttrNames, true));
+		//return all member_group attributes
+		if(!memberGroupAttrNames.isEmpty()) attributes.addAll(this.getAttributes(sess, member, group, memberGroupAttrNames, false));
+		//return all user, member, member-resource and user-facility attributes
+		if(!memberResourceAttrNames.isEmpty()) attributes.addAll(this.getAttributes(sess, member, resource, memberResourceAttrNames, true));
+		//return all resource attributes
+		if(!resourceAttrNames.isEmpty()) attributes.addAll(this.getAttributes(sess, resource, resourceAttrNames));
+		//return all facility attributes
+		if(!facilityAttrNames.isEmpty()) attributes.addAll(this.getAttributes(sess, facility, facilityAttrNames));
+
+		return attributes;
+	}
+
+	@Override
 	public List<Attribute> getAttributes(PerunSession sess, Vo vo, List<String> attrNames) throws InternalErrorException {
 		if (attrNames.isEmpty()) return new ArrayList<>();
 
@@ -1806,6 +1858,11 @@ public class AttributesManagerBlImpl implements AttributesManagerBl {
 	}
 
 	@Override
+	public void setAttributeInNestedTransaction(PerunSession sess, Group group, Attribute attribute) throws InternalErrorException, WrongAttributeValueException, WrongAttributeAssignmentException, WrongReferenceAttributeValueException {
+		setAttribute(sess, group, attribute);
+	}
+
+	@Override
 	public void setAttribute(PerunSession sess, Resource resource, Attribute attribute) throws InternalErrorException, WrongAttributeValueException, WrongAttributeAssignmentException, WrongReferenceAttributeValueException {
 		convertEmptyAttrValueToNull(attribute);
 		if (attribute.getValue() == null) {
@@ -1887,6 +1944,11 @@ public class AttributesManagerBlImpl implements AttributesManagerBl {
 			checkAttributeValue(sess, member, group, attribute);
 			this.checkAttributeDependencies(sess, new RichAttribute<>(member, group, attribute));
 		}
+	}
+
+	@Override
+	public void setAttributeInNestedTransaction(PerunSession sess, Member member, Group group, Attribute attribute) throws InternalErrorException, WrongAttributeValueException, WrongAttributeAssignmentException, WrongReferenceAttributeValueException, AttributeNotExistsException {
+		setAttribute(sess, member, group, attribute);
 	}
 
 	@SuppressWarnings("unused")
@@ -2277,6 +2339,10 @@ public class AttributesManagerBlImpl implements AttributesManagerBl {
 		}
 	}
 
+	@Override
+	public void setAttributeInNestedTransaction(PerunSession sess, UserExtSource userExtSource, Attribute attribute) throws InternalErrorException, WrongAttributeValueException, WrongAttributeAssignmentException, WrongReferenceAttributeValueException {
+		setAttribute(sess, userExtSource, attribute);
+	}
 
 	@Override
 	public AttributeDefinition createAttribute(PerunSession sess, AttributeDefinition attribute) throws InternalErrorException, AttributeDefinitionExistsException {
@@ -4205,7 +4271,7 @@ public class AttributesManagerBlImpl implements AttributesManagerBl {
 	}
 
 	@Override
-	public boolean removeAttributeWithoutCheck(PerunSession sess, Member member, Resource resource, AttributeDefinition attribute) throws InternalErrorException, WrongAttributeAssignmentException, MemberResourceMismatchException {
+	public boolean removeAttributeWithoutCheck(PerunSession sess, Member member, Resource resource, AttributeDefinition attribute) throws InternalErrorException, WrongAttributeAssignmentException, WrongReferenceAttributeValueException, MemberResourceMismatchException {
 		this.checkMemberIsFromTheSameVoLikeResource(sess, member, resource);
 		getAttributesManagerImpl().checkNamespace(sess, attribute, NS_MEMBER_RESOURCE_ATTR);
 		if (getAttributesManagerImpl().isCoreAttribute(sess, attribute))
@@ -6642,6 +6708,19 @@ public class AttributesManagerBlImpl implements AttributesManagerBl {
 		rights.add(new AttributeRights(-1, Role.GROUPADMIN, Collections.singletonList(ActionType.READ)));
 		attributes.put(attr, rights);
 
+		//urn:perun:group:attribute-def:def:startOfLastSuccessfulSynchronization
+		attr = new AttributeDefinition();
+		attr.setNamespace(AttributesManager.NS_GROUP_ATTR_DEF);
+		attr.setType(String.class.getName());
+		attr.setFriendlyName("startOfLastSuccessfulSynchronization");
+		attr.setDisplayName("Start of last successful synchronization");
+		attr.setDescription("If group is synchronized, start time of last successful synchronization will be set.");
+		//set attribute rights (with dummy id of attribute - not known yet)
+		rights = new ArrayList<>();
+		rights.add(new AttributeRights(-1, Role.VOADMIN, Collections.singletonList(ActionType.READ)));
+		rights.add(new AttributeRights(-1, Role.GROUPADMIN, Collections.singletonList(ActionType.READ)));
+		attributes.put(attr, rights);
+
 		//urn:perun:group:attribute-def:def:groupStructureSynchronizationEnabled
 		attr = new AttributeDefinition();
 		attr.setNamespace(AttributesManager.NS_GROUP_ATTR_DEF);
@@ -6714,6 +6793,32 @@ public class AttributesManagerBlImpl implements AttributesManagerBl {
 		attr.setFriendlyName("lastSuccessGroupStructuresSynchronizationTimestamp");
 		attr.setDisplayName("Last successful group structure synchronization timestamp");
 		attr.setDescription("If group structure is synchronized, there will be timestamp of last successful synchronization.");
+		//set attribute rights (with dummy id of attribute - not known yet)
+		rights = new ArrayList<>();
+		rights.add(new AttributeRights(-1, Role.VOADMIN, Collections.singletonList(ActionType.READ)));
+		rights.add(new AttributeRights(-1, Role.GROUPADMIN, Collections.singletonList(ActionType.READ)));
+		attributes.put(attr, rights);
+
+		//urn:perun:group:attribute-def:def:groupSynchronizationTimes
+		attr = new AttributeDefinition();
+		attr.setNamespace(AttributesManager.NS_GROUP_ATTR_DEF);
+		attr.setType(ArrayList.class.getName());
+		attr.setFriendlyName("groupSynchronizationTimes");
+		attr.setDisplayName("Group synchronization times");
+		attr.setDescription("List of time values for group synchronization in format HH:MM rounded to 5 minute. For example 08:50 or 20:55");
+		//set attribute rights (with dummy id of attribute - not known yet)
+		rights = new ArrayList<>();
+		rights.add(new AttributeRights(-1, Role.VOADMIN, Collections.singletonList(ActionType.READ)));
+		rights.add(new AttributeRights(-1, Role.GROUPADMIN, Collections.singletonList(ActionType.READ)));
+		attributes.put(attr, rights);
+
+		//urn:perun:group:attribute-def:def:groupStructureSynchronizationTimes
+		attr = new AttributeDefinition();
+		attr.setNamespace(AttributesManager.NS_GROUP_ATTR_DEF);
+		attr.setType(ArrayList.class.getName());
+		attr.setFriendlyName("groupStructureSynchronizationTimes");
+		attr.setDisplayName("Group structure synchronization times");
+		attr.setDescription("List of time values for group structure synchronization in format HH:MM rounded to 5 minute. For example 08:50 or 20:55");
 		//set attribute rights (with dummy id of attribute - not known yet)
 		rights = new ArrayList<>();
 		rights.add(new AttributeRights(-1, Role.VOADMIN, Collections.singletonList(ActionType.READ)));

@@ -194,6 +194,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 	public AttributesManagerImpl(DataSource perunPool) {
 		this.namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(perunPool);
 		this.jdbc = new JdbcPerunTemplate(perunPool);
+		this.namedParameterJdbcTemplate.getJdbcTemplate().setQueryTimeout(BeansUtils.getCoreConfig().getQueryTimeout());
+		this.jdbc.setQueryTimeout(BeansUtils.getCoreConfig().getQueryTimeout());
 	}
 
 	protected final static String attributeDefinitionMappingSelectQuery =
@@ -3822,7 +3824,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 	}
 
 	@Override
-	public void changedAttributeHook(PerunSession sess, Member member, Resource resource, Attribute attribute) throws InternalErrorException {
+	public void changedAttributeHook(PerunSession sess, Member member, Resource resource, Attribute attribute) throws InternalErrorException, WrongReferenceAttributeValueException {
 		//Call attribute module
 		MemberResourceAttributesModuleImplApi resourceMemberGroupModule = getResourceMemberAttributeModule(sess, attribute);
 		if (resourceMemberGroupModule == null) return; //facility module doesn't exists

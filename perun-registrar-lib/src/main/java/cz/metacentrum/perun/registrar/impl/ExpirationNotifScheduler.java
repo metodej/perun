@@ -8,6 +8,7 @@ import cz.metacentrum.perun.audit.events.ExpirationNotifScheduler.MembershipExpi
 import cz.metacentrum.perun.audit.events.ExpirationNotifScheduler.MembershipExpired;
 
 import cz.metacentrum.perun.core.api.AttributesManager;
+import cz.metacentrum.perun.core.api.BeansUtils;
 import cz.metacentrum.perun.core.api.ExtSourcesManager;
 import cz.metacentrum.perun.core.api.Group;
 import cz.metacentrum.perun.core.api.Member;
@@ -20,7 +21,6 @@ import cz.metacentrum.perun.core.api.Vo;
 import cz.metacentrum.perun.core.api.exceptions.AttributeNotExistsException;
 import cz.metacentrum.perun.core.api.exceptions.ExtendMembershipException;
 import cz.metacentrum.perun.core.api.exceptions.InternalErrorException;
-import cz.metacentrum.perun.core.api.exceptions.MemberNotValidYetException;
 import cz.metacentrum.perun.core.api.exceptions.WrongAttributeAssignmentException;
 import cz.metacentrum.perun.core.api.exceptions.WrongAttributeValueException;
 import cz.metacentrum.perun.core.api.exceptions.WrongReferenceAttributeValueException;
@@ -61,6 +61,7 @@ public class ExpirationNotifScheduler {
 	@Autowired
 	public void setDataSource(DataSource dataSource) {
 		this.jdbc = new JdbcPerunTemplate(dataSource);
+		this.jdbc.setQueryTimeout(BeansUtils.getCoreConfig().getQueryTimeout());
 	}
 
 	public PerunBl getPerun() {
@@ -78,8 +79,8 @@ public class ExpirationNotifScheduler {
 	/**
 	 * Constructor for unit tests
 	 *
-	 * @param perun
-	 * @throws Exception
+	 * @param perun PerunBl bean
+	 * @throws Exception When implementation fails
 	 */
 	public ExpirationNotifScheduler(PerunBl perun) throws Exception {
 		this.perun = perun;
@@ -126,9 +127,9 @@ public class ExpirationNotifScheduler {
 			auditer.log(sess, new MembershipExpirationInDays(member, 1, vo))
 		));
 
-		private ExpirationAuditAction<Auditer, PerunSession, Member, Vo> expirationAuditAction;
+		private final ExpirationAuditAction<Auditer, PerunSession, Member, Vo> expirationAuditAction;
 
-		public ExpirationAuditAction<Auditer, PerunSession, Member, Vo> getExpirationAuditAction() {
+		ExpirationAuditAction<Auditer, PerunSession, Member, Vo> getExpirationAuditAction() {
 			return this.expirationAuditAction;
 		}
 
@@ -154,9 +155,9 @@ public class ExpirationNotifScheduler {
 				auditer.log(sess, new GroupMembershipExpirationInDays(member, 1, group))
 		));
 
-		private GroupExpirationAuditAction<Auditer, PerunSession, Member, Group> expirationAuditAction;
+		private final GroupExpirationAuditAction<Auditer, PerunSession, Member, Group> expirationAuditAction;
 
-		public GroupExpirationAuditAction<Auditer, PerunSession, Member, Group> getExpirationAuditAction() {
+		GroupExpirationAuditAction<Auditer, PerunSession, Member, Group> getExpirationAuditAction() {
 			return this.expirationAuditAction;
 		}
 
@@ -270,7 +271,7 @@ public class ExpirationNotifScheduler {
 			// get all available VOs
 			vos = perun.getVosManagerBl().getVos(sess);
 		} catch (InternalErrorException e) {
-			log.error("Synchronizer: checkMembersState, failed to get all vos exception {}", e);
+			log.error("Synchronizer: checkMembersState, failed to get all vos exception.", e);
 			return;
 		}
 
@@ -287,11 +288,11 @@ public class ExpirationNotifScheduler {
 		try {
 			checkVoMembersState(vos);
 		} catch(InternalErrorException e){
-			log.error("Synchronizer: checkMembersState, exception {}", e);
+			log.error("Synchronizer: checkMembersState.", e);
 		} catch(AttributeNotExistsException e){
-			log.warn("Synchronizer: checkMembersState, attribute definition for membershipExpiration doesn't exist, exception {}", e);
+			log.warn("Synchronizer: checkMembersState, attribute definition for membershipExpiration doesn't exist.", e);
 		} catch(WrongAttributeAssignmentException e){
-			log.error("Synchronizer: checkMembersState, attribute name is from wrong namespace, exception {}", e);
+			log.error("Synchronizer: checkMembersState, attribute name is from wrong namespace.", e);
 		}
 	}
 
@@ -506,9 +507,9 @@ public class ExpirationNotifScheduler {
 					} catch (InternalErrorException e) {
 						log.error("Consistency error while trying to expire member {} in {}, exception {}", member, group, e);
 					} catch (AttributeNotExistsException e) {
-						log.warn("Synchronizer: checkGroupMembersState, attribute definition for membershipExpiration in group doesn't exist, exception {}", e);
+						log.warn("Synchronizer: checkGroupMembersState, attribute definition for membershipExpiration in group doesn't exist.", e);
 					} catch(WrongAttributeAssignmentException e){
-						log.error("Synchronizer: checkMembersState, attribute name is from wrong namespace, exception {}", e);
+						log.error("Synchronizer: checkMembersState, attribute name is from wrong namespace.", e);
 					}
 				});
 	}
@@ -542,9 +543,9 @@ public class ExpirationNotifScheduler {
 					} catch (InternalErrorException e) {
 						log.error("Error during validating member {} in {}, exception {}", member, group, e);
 					} catch (AttributeNotExistsException e) {
-						log.warn("Synchronizer: checkGroupMemberValidation, attribute definition for membershipExpiration in group doesn't exist, exception {}", e);
+						log.warn("Synchronizer: checkGroupMemberValidation, attribute definition for membershipExpiration in group doesn't exist.", e);
 					} catch(WrongAttributeAssignmentException e){
-						log.error("Synchronizer: checkGroupMemberValidation, attribute name is from wrong namespace, exception {}", e);
+						log.error("Synchronizer: checkGroupMemberValidation, attribute name is from wrong namespace.", e);
 					}
 				});
 	}

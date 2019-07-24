@@ -1,5 +1,6 @@
 package cz.metacentrum.perun.core.impl;
 
+import cz.metacentrum.perun.core.api.BeansUtils;
 import cz.metacentrum.perun.core.api.ExtSource;
 import cz.metacentrum.perun.core.api.ExtSourcesManager;
 import cz.metacentrum.perun.core.api.Group;
@@ -82,6 +83,7 @@ public class ExtSourcesManagerImpl implements ExtSourcesManagerImplApi {
 
 	public ExtSourcesManagerImpl(DataSource perunPool) {
 		jdbc = new JdbcPerunTemplate(perunPool);
+		jdbc.setQueryTimeout(BeansUtils.getCoreConfig().getQueryTimeout());
 	}
 
 	public void setSelf(ExtSourcesManagerImplApi self) {
@@ -526,6 +528,17 @@ public class ExtSourcesManagerImpl implements ExtSourcesManagerImplApi {
 	public Map<String, String> getAttributes(ExtSource extSource) throws InternalErrorException {
 		try {
 			return jdbc.query("select attr_name, attr_value from ext_sources_attributes where ext_sources_id = " + extSource.getId(), new AttributesExtractor());
+		} catch (RuntimeException e) {
+			throw new InternalErrorException(e);
+		}
+	}
+
+	@Override
+	public List<ExtSource> getExtSourcesToSynchronize(PerunSession sess) throws InternalErrorException {
+		try {
+			return jdbc.query("select " + extSourceMappingSelectQuery + " from ext_sources, ext_sources_attributes where ext_sources.id=ext_sources_attributes.ext_sources_id and ext_sources_attributes.attr_name=? and ext_sources_attributes.attr_value=true", EXTSOURCE_MAPPER, ExtSourcesManager.EXTSOURCE_SYNCHRONIZATION_ENABLED_ATTRNAME);
+		} catch (EmptyResultDataAccessException e) {
+			return new ArrayList<ExtSource>();
 		} catch (RuntimeException e) {
 			throw new InternalErrorException(e);
 		}

@@ -8,6 +8,7 @@ import cz.metacentrum.perun.core.api.RichUser;
 import cz.metacentrum.perun.core.api.Role;
 import cz.metacentrum.perun.core.api.User;
 import cz.metacentrum.perun.core.api.exceptions.PerunException;
+import cz.metacentrum.perun.core.impl.AuthzRoles;
 import cz.metacentrum.perun.rpc.ApiCaller;
 import cz.metacentrum.perun.rpc.ManagerMethod;
 import cz.metacentrum.perun.core.api.exceptions.RpcException;
@@ -40,6 +41,19 @@ public enum AuthzResolverMethod implements ManagerMethod {
 		}
 	},
 	/*#
+	 * Returns all roles as an AuthzRoles object for a given user.
+	 *
+	 * @param userId int Id of a user
+	 * @return AuthzRoles Object which contains all roles with perunbeans
+	 * @exampleResponse {"FACILITYADMIN":{"Facility":[32]},"SELF":{"Member":[4353,12324],"User":[2552,2252]},"SPONSOR":{"SponsoredUser":[54750]},"VOADMIN":{"Vo":[356]},"PERUNADMIN":{}}
+	 */
+	getUserRoles {
+		@Override
+		public AuthzRoles call(ApiCaller ac, Deserializer parms) throws PerunException {
+			return cz.metacentrum.perun.core.api.AuthzResolver.getUserRoles(ac.getSession(), parms.readInt("userId"));
+		}
+	},
+	/*#
 	 * Returns list of group's role names.
 	 *
 	 * @exampleResponse [ "groupadmin" , "self" , "voadmin" ]
@@ -49,6 +63,19 @@ public enum AuthzResolverMethod implements ManagerMethod {
 		@Override
 		public List<String> call(ApiCaller ac, Deserializer parms ) throws PerunException {
 			return cz.metacentrum.perun.core.api.AuthzResolver.getGroupRoleNames(ac.getSession(), ac.getGroupById(parms.readInt("group")));
+		}
+	},
+	/*#
+	 * Returns all roles as an AuthzRoles object for a given group.
+	 *
+	 * @param groupId int Id of a group
+	 * @return AuthzRoles Object which contains all roles with perunbeans
+	 * @exampleResponse {"FACILITYADMIN":{"Facility":[3682,3826]},"GROUPADMIN":{"Group":[9082,12093],"Vo":[3794,201]},"VOADMIN":{"Vo":[2561,1541,2061,1041,3601]}}
+	 */
+	getGroupRoles {
+		@Override
+		public AuthzRoles call(ApiCaller ac, Deserializer parms) throws PerunException {
+			return cz.metacentrum.perun.core.api.AuthzResolver.getGroupRoles(ac.getSession(), parms.readInt("groupId"));
 		}
 	},
 	/*#

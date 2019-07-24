@@ -7,7 +7,8 @@ import cz.metacentrum.perun.rpc.ApiCaller;
 import cz.metacentrum.perun.rpc.ManagerMethod;
 import cz.metacentrum.perun.rpc.deserializer.Deserializer;
 
-import java.time.Instant;
+import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +27,26 @@ public enum MembersManagerMethod implements ManagerMethod {
 			ac.stateChangingCheck();
 
 			ac.getMembersManager().deleteMember(ac.getSession(), ac.getMemberById(parms.readInt("member")));
+			return null;
+		}
+	},
+
+	/*#
+	 * Delete members with given ids. It is possible to delete members from multiple vos.
+	 *
+	 * @param member int Member <code>id</code>
+	 */
+	deleteMembers {
+		@Override
+		public Void call(ApiCaller ac, Deserializer parms) throws PerunException {
+			ac.stateChangingCheck();
+
+			int[] ids = parms.readArrayOfInts("members");
+			List<Member> members = new ArrayList<>(ids.length);
+			for (int id : ids) {
+				members.add(ac.getMemberById(id));
+			}
+			ac.getMembersManager().deleteMembers(ac.getSession(), members);
 			return null;
 		}
 	},
@@ -1093,14 +1114,23 @@ public enum MembersManagerMethod implements ManagerMethod {
 	 * For almost unlimited time please use time in the far future.
 	 *
 	 * @param member int Member <code>id</code>
-	 * @param suspendedTo Date to which will be member suspended (after this date, he will not be affected by suspension any more)
+	 * @param suspendedTo String date in format yyyy-MM-dd to which member will be suspended
 	 */
 	suspendMemberTo {
 		@Override
 		public Void call(ApiCaller ac, Deserializer parms) throws PerunException {
 			ac.stateChangingCheck();
 
-			ac.getMembersManager().suspendMemberTo(ac.getSession(), ac.getMemberById(parms.readInt("member")), parms.read("suspendedTo", Date.class));
+			String suspendedToString = parms.readString("suspendedTo");
+
+			Date suspendedTo;
+			try {
+				suspendedTo = BeansUtils.getDateFormatterWithoutTime().parse(suspendedToString);
+			} catch (ParseException ex) {
+				throw new RpcException(RpcException.Type.CANNOT_DESERIALIZE_VALUE, "SuspendedTo is not in correct format yyyy-MM-dd and can't be parser correctly!");
+			}
+
+			ac.getMembersManager().suspendMemberTo(ac.getSession(), ac.getMemberById(parms.readInt("member")), suspendedTo);
 
 			return null;
 		}
