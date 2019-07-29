@@ -141,8 +141,9 @@ public class urn_perun_user_attribute_def_virt_institutionsCountries extends Use
 		//find users that are affected by the change - have schacHomeOrganization value ending in key but not ending with longerDomains
 		List<User> affectedUsers = sess.getPerunBl().getUsersManagerBl().findUsersWithExtSourceAttributeValueEnding(sess,getSourceAttributeName(), key, longerDomains);
 		for (User user : affectedUsers) {
-			Attribute attribute = am.getAttribute(sess, user, getDestinationAttributeName());
-			resolvingMessages.add(new AttributeSetForUser(attribute, user));
+//			Attribute attribute = am.getAttribute(sess, user, getDestinationAttributeName());
+			AttributeDefinition attribute = am.getAttributeDefinition(sess, getDestinationAttributeName());
+			resolvingMessages.add(new AttributeSetForUser(new Attribute(attribute), user));
 		}
 
 		return resolvingMessages;

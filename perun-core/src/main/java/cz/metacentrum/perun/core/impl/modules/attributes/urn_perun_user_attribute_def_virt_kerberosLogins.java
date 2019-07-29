@@ -92,9 +92,10 @@ public class urn_perun_user_attribute_def_virt_kerberosLogins extends UserVirtua
 	private List<AuditEvent> resolveEvent(PerunSessionImpl perunSession, User user) throws WrongAttributeAssignmentException, InternalErrorException, AttributeNotExistsException {
 		List<AuditEvent> resolvingMessages = new ArrayList<>();
 
-		Attribute attrVirtKerberosLogins = perunSession.getPerunBl().getAttributesManagerBl().getAttribute(perunSession, user, A_U_V_KERBEROS_LOGINS);
+//		Attribute attrVirtKerberosLogins = perunSession.getPerunBl().getAttributesManagerBl().getAttribute(perunSession, user, A_U_V_KERBEROS_LOGINS);
+		AttributeDefinition attrVirtKerberosLogins = perunSession.getPerunBl().getAttributesManagerBl().getAttributeDefinition(perunSession, A_U_V_KERBEROS_LOGINS);
 		//FIXME: if the attribute value is null or empty, this method should return AttributeRemovedForUser instead
-		resolvingMessages.add(new AttributeSetForUser(attrVirtKerberosLogins, user));
+		resolvingMessages.add(new AttributeSetForUser(new Attribute(attrVirtKerberosLogins), user));
 
 		return resolvingMessages;
 	}

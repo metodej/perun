@@ -83,13 +83,14 @@ public class urn_perun_user_attribute_def_virt_groupNames extends UserVirtualAtt
 		List<AuditEvent> resolvingMessages = new ArrayList<>();
 
 		User user = sess.getPerunBl().getUsersManagerBl().getUserByMember(sess, member);
-		Attribute attribute = sess.getPerunBl().getAttributesManagerBl().getAttribute(sess, user, A_U_V_GROUP_NAMES);
-		if (attribute.valueAsList() == null || attribute.valueAsList().isEmpty()){
-			AttributeDefinition attributeDefinition = new AttributeDefinition(attribute);
+//		Attribute attribute = sess.getPerunBl().getAttributesManagerBl().getAttribute(sess, user, A_U_V_GROUP_NAMES);
+		AttributeDefinition attributeDefinition = getAttributeDefinition();
+//		if (attribute.valueAsList() == null || attribute.valueAsList().isEmpty()){
+//			AttributeDefinition attributeDefinition = new AttributeDefinition(attribute);
 			resolvingMessages.add(new AttributeRemovedForUser(attributeDefinition, user));
-		} else {
-			resolvingMessages.add(new AttributeSetForUser(attribute, user));
-		}
+//		} else {
+//			resolvingMessages.add(new AttributeSetForUser(attribute, user));
+//		}
 
 		return resolvingMessages;
 	}

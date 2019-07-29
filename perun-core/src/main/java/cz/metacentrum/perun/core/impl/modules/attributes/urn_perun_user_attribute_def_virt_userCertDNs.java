@@ -81,9 +81,10 @@ public class urn_perun_user_attribute_def_virt_userCertDNs extends UserVirtualAt
 
 		if (userExtSourceAddedToUser.getUserExtSource().getExtSource() instanceof ExtSourceX509) {
 			User user = userExtSourceAddedToUser.getUser();
-			Attribute attrVirtUserCertDNs = perunSession.getPerunBl().getAttributesManagerBl().getAttribute(perunSession, user, A_U_V_USER_CERT_DNS);
+//			Attribute attrVirtUserCertDNs = perunSession.getPerunBl().getAttributesManagerBl().getAttribute(perunSession, user, A_U_V_USER_CERT_DNS);
+			AttributeDefinition attrVirtUserCertDNs = getAttributeDefinition();
 			//FIXME: if the attribute value is null or empty, this method should return AttributeRemovedForUser instead
-			resolvingMessages.add(new AttributeSetForUser(attrVirtUserCertDNs, user));
+			resolvingMessages.add(new AttributeSetForUser(new Attribute(attrVirtUserCertDNs), user));
 		}
 
 		return resolvingMessages;
@@ -94,9 +95,10 @@ public class urn_perun_user_attribute_def_virt_userCertDNs extends UserVirtualAt
 
 		if (userExtSourceRemovedFromUser.getUserExtSource().getExtSource() instanceof ExtSourceX509) {
 			User user = userExtSourceRemovedFromUser.getUser();
-			Attribute attrVirtUserCertDNs = perunSession.getPerunBl().getAttributesManagerBl().getAttribute(perunSession, user, A_U_V_USER_CERT_DNS);
+//			Attribute attrVirtUserCertDNs = perunSession.getPerunBl().getAttributesManagerBl().getAttribute(perunSession, user, A_U_V_USER_CERT_DNS);
+			AttributeDefinition attrVirtUserCertDNs = getAttributeDefinition();
 			//FIXME: if the attribute value is null or empty, this method should return AttributeRemovedForUser instead
-			resolvingMessages.add(new AttributeSetForUser(attrVirtUserCertDNs, user));
+			resolvingMessages.add(new AttributeSetForUser(new Attribute(attrVirtUserCertDNs), user));
 		}
 
 		return resolvingMessages;

@@ -114,13 +114,14 @@ public class urn_perun_user_attribute_def_virt_loa extends UserVirtualAttributes
 	 */
 	private AuditEvent resolveEvent(PerunSessionImpl sess, User user) throws InternalErrorException, AttributeNotExistsException, WrongAttributeAssignmentException {
 
-		Attribute attribute = sess.getPerunBl().getAttributesManagerBl().getAttribute(sess, user, A_U_V_LOA);
+//		Attribute attribute = sess.getPerunBl().getAttributesManagerBl().getAttribute(sess, user, A_U_V_LOA);
+		AttributeDefinition attribute = getAttributeDefinition();
 
-		if (attribute.getValue() == null) {
-			return new AttributeRemovedForUser(new AttributeDefinition(attribute),user);
-		} else {
-			return new AttributeSetForUser(attribute,user);
-		}
+//		if (attribute.getValue() == null) {
+			return new AttributeRemovedForUser(attribute, user);
+//		} else {
+//			return new AttributeSetForUser(attribute,user);
+//		}
 
 	}
 
