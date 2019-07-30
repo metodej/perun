@@ -297,18 +297,19 @@ public class Auditer {
 			log.trace("Trying to store empty list of messages to DB!");
 			return;
 		}
-
 		synchronized (LOCK_DB_TABLE_AUDITER_LOG) {
-
+			long millisAll = System.currentTimeMillis();
 			// Resolve all additional message from attribute modules and add them to the bulk
+			long millis2 = 0;
 			try {
 
 				//Get perun session from the first message (all sessions should be same from the same principal)
 				PerunSessionImpl session = (PerunSessionImpl) auditerMessages.get(0).getOriginatingSession();
-
+				long millis = System.currentTimeMillis();
 				//Check recursively all messages if they can create any resolving message
 				auditerMessages.addAll(checkRegisteredAttributesModules(session, auditerMessages, new ArrayList<>()));
-
+				millis2 = System.currentTimeMillis() - millis;
+				log.info("The checkRegisteredAttributesModules method took " + millis2 + " milliseconds.");
 			} catch (Throwable ex) {
 				log.error("There is a problem with processing resolving messages! It will be forcibly skipped to prevent unexpected behavior of auditer log!", ex);
 			}
@@ -339,13 +340,13 @@ public class Auditer {
 								return auditerMessages.size();
 							}
 						});
-
 			} catch (RuntimeException e) {
 				log.error("Cannot store auditer log json message in batch for list ['{}'], exception: {}", auditerMessages, e);
 			} catch (InternalErrorException e) {
 				log.error("Could not get system date identifier for the DB", e);
 			}
-
+			long millisAll2 = System.currentTimeMillis() - millisAll;
+			log.info("The checkRegisteredAttributesModules method took " + millis2 + " ms while the whole storing of messages took " + millisAll2 + "ms.");
 		}
 
 	}
