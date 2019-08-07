@@ -21,9 +21,11 @@ import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -55,6 +57,14 @@ public class Auditer {
 	private JdbcPerunTemplate jdbc;
 
 	private int lastProcessedId;
+	private static final Map<Class<?>,Class<?>> mixinMap = new HashMap<>();
+	private static final ObjectMapper mapper = new ObjectMapper();
+
+	static {
+		mapper.enableDefaultTyping();
+		// TODO - skip any problematic properties using interfaces for mixins
+		mapper.setMixIns(mixinMap);
+	}
 
 	private static final Object LOCK_DB_TABLE_AUDITER_LOG = new Object();
 
@@ -305,34 +315,23 @@ public class Auditer {
 
 			//Write all messages to the database
 			try {
-				jdbc.batchUpdate("insert into auditer_log (id, msg, actor, created_at, created_by_uid) values (?,?,?," + Compatibility.getSysdate() + ",?)",
+				jdbc.batchUpdate("insert into auditer_log (id, msg, actor, created_at, created_by_uid) values ("+Compatibility.getSequenceNextval("auditer_log_id_seq")+",?,?," + Compatibility.getSysdate() + ",?)",
 						new BatchPreparedStatementSetter() {
 							@Override
 							public void setValues(PreparedStatement ps, int i) throws SQLException {
 
 								final AuditerMessage auditerMessage = auditerMessages.get(i);
 								final PerunSession session = auditerMessage.getOriginatingSession();
-
-								try {
-									final int msgId = Utils.getNewId(jdbc, "auditer_log_id_seq");
-									ps.setInt(1, msgId);
-								} catch (InternalErrorException e) {
-									throw new SQLException("Cannot get unique id for new auditer log message ['" + auditerMessage.getEvent().getMessage() + "']", e);
-								}
-
-								ObjectMapper mapper = new ObjectMapper();
-								mapper.enableDefaultTyping();
 								String jsonString = "";
 								try {
 									jsonString = mapper.writeValueAsString(auditerMessage.getEvent());
-
 								} catch (IOException e) {
-									log.error("Could not map event {} to JSON.", auditerMessage.getEvent().getClass().getSimpleName());
+									log.error("Could not map event {} to JSON: {}", auditerMessage.getEvent().getClass().getSimpleName(), auditerMessage.getEvent().getMessage());
 								}
 								log.info("AUDIT_JSON: {}", jsonString);
-								ps.setString(2, jsonString);
-								ps.setString(3, session.getPerunPrincipal().getActor());
-								ps.setInt(4, session.getPerunPrincipal().getUserId());
+								ps.setString(1, jsonString);
+								ps.setString(2, session.getPerunPrincipal().getActor());
+								ps.setInt(3, session.getPerunPrincipal().getUserId());
 							}
 
 							@Override
@@ -405,7 +404,9 @@ public class Auditer {
 				try {
 					List<AuditEvent> auditEvents = attributesModuleImplApi.resolveVirtualAttributeValueChange((PerunSessionImpl) session, message.getEvent());
 					for (AuditEvent auditEvent : auditEvents) {
-						addedResolvedMessages.add(new AuditerMessage(session, auditEvent));
+						AuditerMessage msg = new AuditerMessage(session, auditEvent);
+						// do not store message duplicates created by this first pass through the message processing cycle
+						if (!addedResolvedMessages.contains(msg)) addedResolvedMessages.add(msg);
 					}
 				} catch (InternalErrorException | WrongAttributeAssignmentException | AttributeNotExistsException | WrongReferenceAttributeValueException ex) {
 					log.error("Error when auditer trying to resolve messages in modules.", ex);
