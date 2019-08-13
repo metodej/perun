@@ -59,6 +59,7 @@ public class Auditer {
 	private int lastProcessedId;
 	private static final Map<Class<?>,Class<?>> mixinMap = new HashMap<>();
 	private static final ObjectMapper mapper = new ObjectMapper();
+	private static long millisOfSerialization;
 
 	static {
 		mapper.enableDefaultTyping();
@@ -315,10 +316,13 @@ public class Auditer {
 
 			//Write all messages to the database
 			try {
+				long millis = System.currentTimeMillis();
+				millisOfSerialization = 0;
 				jdbc.batchUpdate("insert into auditer_log (id, msg, actor, created_at, created_by_uid) values ("+Compatibility.getSequenceNextval("auditer_log_id_seq")+",?,?," + Compatibility.getSysdate() + ",?)",
 						new BatchPreparedStatementSetter() {
 							@Override
 							public void setValues(PreparedStatement ps, int i) throws SQLException {
+								long millis2 = System.currentTimeMillis();
 
 								final AuditerMessage auditerMessage = auditerMessages.get(i);
 								final PerunSession session = auditerMessage.getOriginatingSession();
@@ -332,6 +336,8 @@ public class Auditer {
 								ps.setString(1, jsonString);
 								ps.setString(2, session.getPerunPrincipal().getActor());
 								ps.setInt(3, session.getPerunPrincipal().getUserId());
+
+								millisOfSerialization += System.currentTimeMillis() - millis2;
 							}
 
 							@Override
@@ -339,6 +345,8 @@ public class Auditer {
 								return auditerMessages.size();
 							}
 						});
+				millis = System.currentTimeMillis() - millis;
+				log.info("Time of batchUpdate was " + millis + " ms while the time of serialization was " + millisOfSerialization + " ms.");
 
 			} catch (RuntimeException e) {
 				log.error("Cannot store auditer log json message in batch for list ['{}'], exception: {}", auditerMessages, e);
