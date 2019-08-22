@@ -13,33 +13,40 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Permission for directory scratch set in service fs_scratch
+ * Module for service 'rt' used for setting output file name
+ * The path is always '/tmp/{name}'
  *
  * @author Michal Stava <stavamichal@gmail.com>
+ * @date 9.8.2019
  */
-public class urn_perun_facility_attribute_def_def_scratchDirPermissions  extends FacilityAttributesModuleAbstract implements FacilityAttributesModuleImplApi {
+public class urn_perun_facility_attribute_def_def_rtOutputFileName extends FacilityAttributesModuleAbstract implements FacilityAttributesModuleImplApi {
 
-	private static final Pattern pattern = Pattern.compile("^[01234567]?[01234567]{3}$");
+	Pattern fileNamePattern = Pattern.compile("^[-_a-zA-Z0-9]+$");
 
 	@Override
 	public void checkAttributeSemantics(PerunSessionImpl perunSession, Facility facility, Attribute attribute) throws WrongAttributeValueException {
-		//Null is ok, it means use default permissions in script (probably 0700)
-		if(attribute.getValue() == null) return;
-		String attrValue = (String) attribute.getValue();
-		
-		Matcher match = pattern.matcher(attrValue);
 
-		if(!match.matches()) throw new WrongAttributeValueException(attribute, facility, "Bad format of attribute, (expected something like '750' or '0700').");
+		//attribute can be empty
+		if (attribute.getValue() == null) {
+			return;
+		}
+
+		String value = (String) attribute.getValue();
+
+		Matcher matcher = fileNamePattern.matcher(value);
+		if (!matcher.matches()) {
+			throw new WrongAttributeValueException(attribute, facility, "Name of the file can contain only alphabet, numeric, dash and underscore characters.");
+		}
 	}
 
 	@Override
 	public AttributeDefinition getAttributeDefinition() {
 		AttributeDefinition attr = new AttributeDefinition();
 		attr.setNamespace(AttributesManager.NS_FACILITY_ATTR_DEF);
-		attr.setFriendlyName("scratchDirPermissions");
-		attr.setDisplayName("Unix permissions for scratch");
+		attr.setFriendlyName("rtOutputFileName");
+		attr.setDisplayName("RT output file name");
 		attr.setType(String.class.getName());
-		attr.setDescription("Unix permissions, which will be applied when new scratch folder is created.");
+		attr.setDescription("Name of the file to which will Perun save the output file from the service 'rt' in the end device. It is always '/tmp/{nameOfTheFile}'.");
 		return attr;
 	}
 }
