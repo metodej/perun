@@ -96,6 +96,7 @@ import cz.metacentrum.perun.core.impl.modules.attributes.urn_perun_facility_attr
 import cz.metacentrum.perun.core.impl.modules.attributes.urn_perun_member_attribute_def_def_suspensionInfo;
 import cz.metacentrum.perun.core.implApi.AttributesManagerImplApi;
 import cz.metacentrum.perun.core.implApi.modules.attributes.AttributesModuleImplApi;
+import cz.metacentrum.perun.core.implApi.modules.attributes.SkipValueCheckDuringDependencyCheck;
 import cz.metacentrum.perun.core.implApi.modules.attributes.UserVirtualAttributesModuleImplApi;
 import cz.metacentrum.perun.core.implApi.modules.attributes.VirtualAttributesModuleImplApi;
 import cz.metacentrum.perun.utils.graphs.Graph;
@@ -5286,6 +5287,8 @@ public class AttributesManagerBlImpl implements AttributesManagerBl {
 			return getAttributesManagerImpl().getAllGroupResourceValues(sess, attributeDefinition);
 		} else if (isFromNamespace(sess, attributeDefinition, AttributesManager.NS_GROUP_ATTR)) {
 			return getAttributesManagerImpl().getAllGroupValues(sess, attributeDefinition);
+		} else if (isFromNamespace(sess, attributeDefinition, AttributesManager.NS_USER_ATTR)) {
+			return getAttributesManagerImpl().getAllUserValues(sess, attributeDefinition);
 		} else {
 			throw new InternalErrorException("Not implemented yet!");
 		}
@@ -5815,6 +5818,12 @@ public class AttributesManagerBlImpl implements AttributesManagerBl {
 			if (dependencies != null && !dependencies.isEmpty()) {
 				for (AttributeDefinition dependency : dependencies) {
 					List<RichAttribute> richAttributesToCheck;
+					if (attributesManagerImpl.isVirtAttribute(sess, dependency)) {
+						AttributesModuleImplApi module = (AttributesModuleImplApi) attributesManagerImpl.getAttributesModule(sess, dependency);
+						if (module.getClass().isAnnotationPresent(SkipValueCheckDuringDependencyCheck.class)) {
+							continue;
+						}
+					}
 					try {
 						richAttributesToCheck = getRichAttributesWithHoldersForAttributeDefinition(sess, dependency, richAttr);
 					} catch (AttributeNotExistsException | VoNotExistsException | UserNotExistsException | GroupResourceMismatchException | MemberResourceMismatchException ex) {
@@ -6760,6 +6769,19 @@ public class AttributesManagerBlImpl implements AttributesManagerBl {
 		//set attribute rights (with dummy id of attribute - not known yet)
 		rights = new ArrayList<>();
 		rights.add(new AttributeRights(-1, Role.VOADMIN, Collections.singletonList(ActionType.READ)));
+		rights.add(new AttributeRights(-1, Role.GROUPADMIN, Collections.singletonList(ActionType.READ)));
+		attributes.put(attr, rights);
+
+		//Group.trigger
+		//this is a group attribute which contains ids of the groups to which deleted members are added from the group with the attribute
+		attr = new AttributeDefinition();
+		attr.setNamespace(AttributesManager.NS_GROUP_ATTR_DEF);
+		attr.setType(ArrayList.class.getName());
+		attr.setFriendlyName("groupTrigger");
+		attr.setDisplayName("Group Trigger");
+		//set attribute rights (with dummy id of attribute - not known yet)
+		rights = new ArrayList<>();
+		rights.add(new AttributeRights(-1, Role.VOADMIN, Arrays.asList(ActionType.READ, ActionType.WRITE)));
 		rights.add(new AttributeRights(-1, Role.GROUPADMIN, Collections.singletonList(ActionType.READ)));
 		attributes.put(attr, rights);
 

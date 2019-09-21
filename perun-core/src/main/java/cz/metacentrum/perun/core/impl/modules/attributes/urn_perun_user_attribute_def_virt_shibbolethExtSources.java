@@ -8,6 +8,7 @@ import cz.metacentrum.perun.core.api.User;
 import cz.metacentrum.perun.core.api.UserExtSource;
 import cz.metacentrum.perun.core.api.exceptions.InternalErrorException;
 import cz.metacentrum.perun.core.impl.PerunSessionImpl;
+import cz.metacentrum.perun.core.implApi.modules.attributes.SkipValueCheckDuringDependencyCheck;
 import cz.metacentrum.perun.core.implApi.modules.attributes.UserVirtualAttributesModuleAbstract;
 import cz.metacentrum.perun.core.implApi.modules.attributes.UserVirtualAttributesModuleImplApi;
 
@@ -20,6 +21,7 @@ import java.util.Map;
  *
  * @author Slavek Licehammer &lt;glory@ics.muni.cz&gt;
  */
+@SkipValueCheckDuringDependencyCheck
 public class urn_perun_user_attribute_def_virt_shibbolethExtSources extends UserVirtualAttributesModuleAbstract implements UserVirtualAttributesModuleImplApi {
 
 	@Override
@@ -27,6 +29,7 @@ public class urn_perun_user_attribute_def_virt_shibbolethExtSources extends User
 		Map<String, String> idpLogins = new LinkedHashMap<>();
 		List<UserExtSource> userExtSources = sess.getPerunBl().getUsersManagerBl().getUserExtSources(sess, user);
 
+		int i=1;
 		for(UserExtSource uES: userExtSources) {
 			if(uES.getExtSource() != null) {
 				String login = uES.getLogin();
@@ -35,7 +38,8 @@ public class urn_perun_user_attribute_def_virt_shibbolethExtSources extends User
 
 				if(type != null && login != null) {
 					if(type.equals(ExtSourcesManager.EXTSOURCE_IDP)) {
-						idpLogins.put(idpIdentifier, login);
+						idpLogins.put(i + ":" + idpIdentifier, login);
+						i++;
 					}
 				}
 			}

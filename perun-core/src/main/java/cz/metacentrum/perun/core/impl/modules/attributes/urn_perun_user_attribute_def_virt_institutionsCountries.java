@@ -1,8 +1,8 @@
 package cz.metacentrum.perun.core.impl.modules.attributes;
 
+import cz.metacentrum.perun.audit.events.AttributesManagerEvents.AttributeChangedForUser;
 import cz.metacentrum.perun.audit.events.AttributesManagerEvents.AttributeRemovedForKey;
 import cz.metacentrum.perun.audit.events.AttributesManagerEvents.AttributeSetForKey;
-import cz.metacentrum.perun.audit.events.AttributesManagerEvents.AttributeSetForUser;
 import cz.metacentrum.perun.audit.events.AuditEvent;
 import cz.metacentrum.perun.core.api.Attribute;
 import cz.metacentrum.perun.core.api.AttributeDefinition;
@@ -15,6 +15,7 @@ import cz.metacentrum.perun.core.api.exceptions.WrongAttributeAssignmentExceptio
 import cz.metacentrum.perun.core.api.exceptions.WrongReferenceAttributeValueException;
 import cz.metacentrum.perun.core.bl.AttributesManagerBl;
 import cz.metacentrum.perun.core.impl.PerunSessionImpl;
+import cz.metacentrum.perun.core.implApi.modules.attributes.SkipValueCheckDuringDependencyCheck;
 import cz.metacentrum.perun.core.implApi.modules.attributes.UserVirtualAttributeCollectedFromUserExtSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +52,7 @@ class DnsMapCtx extends UserVirtualAttributeCollectedFromUserExtSource.ModifyVal
  * @author Martin Kuba makub@ics.muni.cz
  */
 @SuppressWarnings("unused")
+@SkipValueCheckDuringDependencyCheck
 public class urn_perun_user_attribute_def_virt_institutionsCountries extends UserVirtualAttributeCollectedFromUserExtSource<DnsMapCtx> {
 
 	private final static Logger log = LoggerFactory.getLogger(urn_perun_user_attribute_def_virt_institutionsCountries.class);
@@ -141,8 +143,8 @@ public class urn_perun_user_attribute_def_virt_institutionsCountries extends Use
 		//find users that are affected by the change - have schacHomeOrganization value ending in key but not ending with longerDomains
 		List<User> affectedUsers = sess.getPerunBl().getUsersManagerBl().findUsersWithExtSourceAttributeValueEnding(sess,getSourceAttributeName(), key, longerDomains);
 		for (User user : affectedUsers) {
-			Attribute attribute = am.getAttribute(sess, user, getDestinationAttributeName());
-			resolvingMessages.add(new AttributeSetForUser(attribute, user));
+			AttributeDefinition attributeDefinition = am.getAttributeDefinition(sess, getDestinationAttributeName());
+			resolvingMessages.add(new AttributeChangedForUser(new Attribute(attributeDefinition), user));
 		}
 
 		return resolvingMessages;

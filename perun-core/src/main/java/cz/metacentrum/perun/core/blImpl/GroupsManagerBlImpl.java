@@ -41,7 +41,6 @@ import cz.metacentrum.perun.core.api.Member;
 import cz.metacentrum.perun.core.api.MemberGroupStatus;
 import cz.metacentrum.perun.core.api.MembershipType;
 import cz.metacentrum.perun.core.api.Pair;
-import cz.metacentrum.perun.core.api.PerunBeanProcessingPool;
 import cz.metacentrum.perun.core.api.PerunClient;
 import cz.metacentrum.perun.core.api.PerunPrincipal;
 import cz.metacentrum.perun.core.api.PerunSession;
@@ -1001,6 +1000,7 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 		membersToRemove.removeAll(newMembers);
 
 		for(Member removedIndirectMember: membersToRemove) {
+			addMemberToGroupsFromTriggerAttribute(sess, group, removedIndirectMember);
 			notifyMemberRemovalFromGroup(sess, group, removedIndirectMember);
 			//remove all member-group attributes because member is not part of group any more
 			getPerunBl().getAttributesManagerBl().removeAllAttributes(sess, removedIndirectMember, group);
@@ -1094,6 +1094,39 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 
 		if (!VosManager.MEMBERS_GROUP.equals(group.getName())) {
 			recalculateMemberGroupStatusRecursively(sess, member, group);
+		}
+
+		if (!getGroupsManagerImpl().isGroupMember(sess, group, member)) {
+			addMemberToGroupsFromTriggerAttribute(sess, group, member);
+		}
+	}
+
+	/**
+	 * Adds the member to the groups in 'groupTrigger' attribute of the 'group' argument
+	 * If any error occurs, the group will be skipped and the error will be logged.
+	 * If there is an error in getting the attribute, the method will log the error and return
+	 *
+	 * @param sess PerunSession
+	 * @param group Group from which the member has been removed
+	 * @param member Member to be added to groups in groupTrigger
+	 */
+	private void addMemberToGroupsFromTriggerAttribute(PerunSession sess, Group group, Member member) {
+		ArrayList<String> groupsForAddition;
+		try {
+			groupsForAddition = getPerunBl().getAttributesManagerBl().getAttribute(sess, group, AttributesManager.NS_GROUP_ATTR_DEF+":groupTrigger").valueAsList();
+		} catch (InternalErrorException | WrongAttributeAssignmentException | AttributeNotExistsException | NumberFormatException e) {
+			log.error("Error while getting groupTrigger attribute, Exception message: " + e.toString());
+			return;
+		}
+		if (groupsForAddition == null) return;
+
+		for (String groupId : groupsForAddition) {
+			try {
+				Group groupForAddition = getGroupById(sess, Integer.parseInt(groupId));
+				addDirectMember(sess, groupForAddition, member);
+			} catch (InternalErrorException | WrongReferenceAttributeValueException | AlreadyMemberException | WrongAttributeValueException | GroupNotExistsException e) {
+				log.error("Member could not be added to the group, Exception message: " + e.toString());
+			}
 		}
 	}
 
@@ -2691,9 +2724,12 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 		for(RichMember richMember: groupMembers) {
 			idsOfUsersInGroup.put(richMember.getUserId(), richMember);
 		}
-
 		//try to find users by login and loginSource
 		for(Map<String, String> subjectFromLoginSource : subjects) {
+			if (subjectFromLoginSource == null) {
+				log.error("Null value in the subjects list. Skipping.");
+				continue;
+			}
 			String login = subjectFromLoginSource.get("login");
 			// Skip subjects, which doesn't have login
 			if (login == null || login.isEmpty()) {
@@ -2705,15 +2741,31 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 			//try to find user from perun by login and member extSource (need to use memberSource because loginSource is not saved by synchronization)
 			User user = null;
 			Candidate candidate = null;
+
+			List<UserExtSource> userExtSources = new ArrayList<>();
 			try {
 				UserExtSource userExtSource = getPerunBl().getUsersManagerBl().getUserExtSourceByExtLogin(sess, memberSource, login);
-				user = getPerunBl().getUsersManagerBl().getUserByUserExtSource(sess, userExtSource);
-				if(!idsOfUsersInGroup.containsKey(user.getId())) {
-					candidate = new Candidate(user, userExtSource);
-					//for lightweight synchronization we want to skip all update of attributes
-					candidate.setAttributes(new HashMap<>());
+				userExtSources.add(userExtSource);
+			} catch (UserExtSourceNotExistsException e) {
+				//skipping, this extSource does not exist and thus won't be in the list
+			}
+			List<UserExtSource> additionalUserExtSources = Utils.extractAdditionalUserExtSources(sess, subjectFromLoginSource);
+			userExtSources.addAll(additionalUserExtSources);
+			for (UserExtSource source : userExtSources) {
+				try {
+					user = getPerunBl().getUsersManagerBl().getUserByUserExtSource(sess, source);
+					if(!idsOfUsersInGroup.containsKey(user.getId())) {
+						candidate = new Candidate(user, source);
+						//for lightweight synchronization we want to skip all update of attributes
+						candidate.setAttributes(new HashMap<>());
+					}
+					break;
+				} catch(UserNotExistsException e) {
+					//skip because the user from this ExtSource does not exist so we can continue
 				}
-			} catch (UserExtSourceNotExistsException | UserNotExistsException ex) {
+			}
+
+			if (user == null) {
 				//If not find, get more information about him from member extSource
 				List<Map<String, String>> subjectToConvert = Collections.singletonList(subjectFromLoginSource);
 				List<Candidate> converetedCandidatesList = convertSubjectsToCandidates(sess, subjectToConvert, memberSource, loginSource, skippedMembers);

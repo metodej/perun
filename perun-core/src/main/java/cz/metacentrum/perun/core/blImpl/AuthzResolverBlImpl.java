@@ -64,6 +64,8 @@ public class AuthzResolverBlImpl implements AuthzResolverBl {
 	private static final String UNSET_ROLE = "UNSET";
 	private static final String SET_ROLE = "SET";
 
+	private final static Set<String> extSourcesWithMultipleIdentifiers = BeansUtils.getCoreConfig().getExtSourcesMultipleIdentifiers();
+
 	/**
 	 * Checks if the principal is authorized.
 	 *
@@ -170,13 +172,13 @@ public class AuthzResolverBlImpl implements AuthzResolverBl {
 			return true;
 		}
 
-		// Engine and Service can read attributes
-		if (sess.getPerunPrincipal().getRoles().hasRole(Role.ENGINE) && actionType.equals(ActionType.READ)) {
-			return true;
-		}
-
-		// RPC can read attributes
-		if (sess.getPerunPrincipal().getRoles().hasRole(Role.RPC) && actionType.equals(ActionType.READ)) {
+		// Engine, Service, RPC and Perunobserver can read attributes
+		if ((actionType.equals(ActionType.READ) ||
+			actionType.equals(ActionType.READ_PUBLIC) ||
+			actionType.equals(ActionType.READ_VO)) &&
+			(sess.getPerunPrincipal().getRoles().hasRole(Role.RPC) ||
+			sess.getPerunPrincipal().getRoles().hasRole(Role.PERUNOBSERVER) ||
+			sess.getPerunPrincipal().getRoles().hasRole(Role.ENGINE))) {
 			return true;
 		}
 
@@ -1070,8 +1072,8 @@ public class AuthzResolverBlImpl implements AuthzResolverBl {
 			throw new InternalErrorException("There is no object for setting role (user or authorizedGroup).");
 		if (authorizedGroup != null && user != null)
 			throw new InternalErrorException("There are both authorizedGroup and user for setting role, only one is acceptable.");
-		if (!(role.equals(Role.PERUNADMIN) || role.equals(Role.CABINETADMIN)) && complementaryObject == null)
-			throw new InternalErrorException("Complementary object can be null only for the role perunadmin/cabinetadmin.");
+		if (!(role.equals(Role.PERUNADMIN) || role.equals(Role.CABINETADMIN) || role.equals(Role.PERUNOBSERVER)) && complementaryObject == null)
+			throw new InternalErrorException("Complementary object can be null only for the role perunadmin, cabinetadmin and perunobserver.");
 
 		//Check operation
 		switch (operation) {
@@ -1083,6 +1085,9 @@ public class AuthzResolverBlImpl implements AuthzResolverBl {
 				} else if (role.equals(Role.CABINETADMIN)) {
 					if (user != null) authzResolverImpl.makeUserCabinetAdmin(sess, user);
 					else throw new InternalErrorException("Not supported perunRole on authorizedGroup.");
+				} else if (role.equals(Role.PERUNOBSERVER)) {
+					if (user != null) authzResolverImpl.makeUserPerunObserver(sess, user);
+					else authzResolverImpl.makeAuthorizedGroupPerunObserver(sess, authorizedGroup);
 				} else if (role.equals(Role.VOOBSERVER)) {
 					if (complementaryObject instanceof Vo) {
 						if (user != null) authzResolverImpl.addVoRole(sess, Role.VOOBSERVER, (Vo) complementaryObject, user);
@@ -1161,6 +1166,9 @@ public class AuthzResolverBlImpl implements AuthzResolverBl {
 				} else if (role.equals(Role.CABINETADMIN)) {
 					if (user != null) authzResolverImpl.removeCabinetAdmin(sess, user);
 					else throw new InternalErrorException("Not supported perunRole on authorizedGroup.");
+				} else if (role.equals(Role.PERUNOBSERVER)) {
+					if (user != null) authzResolverImpl.removePerunObserver(sess, user);
+					else authzResolverImpl.removePerunObserverFromAuthorizedGroup(sess, authorizedGroup);
 				} else if (role.equals(Role.VOOBSERVER)) {
 					if (complementaryObject instanceof Vo) {
 						if (user != null) authzResolverImpl.removeVoRole(sess, Role.VOOBSERVER, (Vo) complementaryObject, user);
@@ -1602,8 +1610,16 @@ public class AuthzResolverBlImpl implements AuthzResolverBl {
 		Utils.checkPerunSession(sess);
 		log.trace("Refreshing session data for session {}.", sess);
 
+		PerunPrincipal principal = sess.getPerunPrincipal();
+
 		try {
-			User user = perunBl.getUsersManagerBl().getUserByExtSourceNameAndExtLogin(sess, sess.getPerunPrincipal().getExtSourceName(), sess.getPerunPrincipal().getActor());
+			User user;
+				if(extSourcesWithMultipleIdentifiers.contains(principal.getExtSourceName())) {
+					UserExtSource ues = perunBl.getUsersManagerBl().getUserExtSourceFromMultipleIdentifiers(sess, principal);
+					user = perunBl.getUsersManagerBl().getUserByUserExtSource(sess, ues);
+				} else {
+					user = perunBl.getUsersManagerBl().getUserByExtSourceNameAndExtLogin(sess, principal.getExtSourceName(), principal.getActor());
+				}
 			sess.getPerunPrincipal().setUser(user);
 		} catch (Exception ex) {
 			// we don't care that user was not found - clear it from session
