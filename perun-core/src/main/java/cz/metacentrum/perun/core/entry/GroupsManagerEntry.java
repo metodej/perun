@@ -51,7 +51,6 @@ import cz.metacentrum.perun.core.api.exceptions.VoNotExistsException;
 import cz.metacentrum.perun.core.api.exceptions.WrongAttributeAssignmentException;
 import cz.metacentrum.perun.core.api.exceptions.WrongAttributeValueException;
 import cz.metacentrum.perun.core.api.exceptions.WrongReferenceAttributeValueException;
-import cz.metacentrum.perun.core.api.exceptions.rt.InternalErrorRuntimeException;
 import cz.metacentrum.perun.core.bl.GroupsManagerBl;
 import cz.metacentrum.perun.core.bl.PerunBl;
 import cz.metacentrum.perun.core.impl.Utils;
@@ -81,7 +80,7 @@ public class GroupsManagerEntry implements GroupsManager {
 
 	//FIXME delete this method
 	public GroupsManagerImplApi getGroupsManagerImpl() {
-		throw new InternalErrorRuntimeException("Unsupported method!");
+		throw new InternalErrorException("Unsupported method!");
 	}
 
 	@Override
@@ -92,7 +91,7 @@ public class GroupsManagerEntry implements GroupsManager {
 
 
 		if (!group.getName().matches(GroupsManager.GROUP_SHORT_NAME_REGEXP)) {
-			throw new InternalErrorException(new IllegalArgumentException("Wrong group name, group name must matches " + GroupsManager.GROUP_SHORT_NAME_REGEXP));
+			throw new IllegalArgumentException("Wrong group name, group name must matches " + GroupsManager.GROUP_SHORT_NAME_REGEXP);
 		}
 
 		if (group.getParentGroupId() != null) throw new InternalErrorException("Top-level groups can't have parentGroupId set!");
@@ -121,7 +120,7 @@ public class GroupsManagerEntry implements GroupsManager {
 
 
 		if (!group.getName().matches(GroupsManager.GROUP_SHORT_NAME_REGEXP)) {
-			throw new InternalErrorException(new IllegalArgumentException("Wrong group name, group name must matches " + GroupsManager.GROUP_SHORT_NAME_REGEXP));
+			throw new IllegalArgumentException("Wrong group name, group name must matches " + GroupsManager.GROUP_SHORT_NAME_REGEXP);
 		}
 
 		// Authorization
@@ -207,7 +206,7 @@ public class GroupsManagerEntry implements GroupsManager {
 		Utils.notNull(group.getName(), "group.name");
 
 		if (!group.getShortName().matches(GroupsManager.GROUP_SHORT_NAME_REGEXP)) {
-			throw new InternalErrorException(new IllegalArgumentException("Wrong group shortName, group shortName must matches " + GroupsManager.GROUP_SHORT_NAME_REGEXP));
+			throw new IllegalArgumentException("Wrong group shortName, group shortName must matches " + GroupsManager.GROUP_SHORT_NAME_REGEXP);
 		}
 
 		// Authorization
@@ -276,7 +275,7 @@ public class GroupsManagerEntry implements GroupsManager {
 		Utils.notNull(name, "name");
 
 		if (!name.matches(GroupsManager.GROUP_FULL_NAME_REGEXP)) {
-			throw new InternalErrorException(new IllegalArgumentException("Wrong group name, group name must matches " + GroupsManager.GROUP_FULL_NAME_REGEXP));
+			throw new IllegalArgumentException("Wrong group name, group name must matches " + GroupsManager.GROUP_FULL_NAME_REGEXP);
 		}
 
 		Group group = getGroupsManagerBl().getGroupByName(sess, vo, name);
