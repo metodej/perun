@@ -852,13 +852,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where namespace=? or (namespace in (?,?) and (attr_value is not null or attr_value_text is not null))",
 					new SingleBeanAttributeRowMapper<>(sess, this, facility), facility.getId(), AttributesManager.NS_FACILITY_ATTR_CORE, AttributesManager.NS_FACILITY_ATTR_DEF, AttributesManager.NS_FACILITY_ATTR_OPT);
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + facility);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, facility, null);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -900,13 +894,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where namespace in ( :nSC,:nSO,:nSD,:nSV ) and attr_names.attr_name in ( :attrNames )",
 					parameters, new SingleBeanAttributeRowMapper<>(sess, this, facility));
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + facility + " and their names are: " + attrNames);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, facility, null, attrNames);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -937,13 +925,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 		}
 		List<Attribute> attributesDB = getVirtualAttributes(new SingleBeanAttributeRowMapper<>(sess, this, facility), AttributesManager.NS_FACILITY_ATTR_VIRT);
 
-		if (attributesCache != null) {
-			Collections.sort(attributesDB);
-			Collections.sort(attributesCache);
-			if (!attributesDB.equals(attributesCache)) {
-				log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + facility);
-			}
-		}
+		compareAttributesFromCacheAndDB(attributesCache, attributesDB, facility, null);
 
 		return attributesDB;
 	}
@@ -958,13 +940,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 		}
 		List<Attribute> attributesDB = getVirtualAttributes(new SingleBeanAttributeRowMapper<>(sess, this, member), AttributesManager.NS_MEMBER_ATTR_VIRT);
 
-		if (attributesCache != null) {
-			Collections.sort(attributesDB);
-			Collections.sort(attributesCache);
-			if (!attributesDB.equals(attributesCache)) {
-				log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + member);
-			}
-		}
+		compareAttributesFromCacheAndDB(attributesCache, attributesDB, member, null);
 
 		return attributesDB;
 	}
@@ -979,13 +955,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 		}
 		List<Attribute> attributesDB = getVirtualAttributes(new SingleBeanAttributeRowMapper<>(sess, this, vo), AttributesManager.NS_VO_ATTR_VIRT);
 
-		if (attributesCache != null) {
-			Collections.sort(attributesDB);
-			Collections.sort(attributesCache);
-			if (!attributesDB.equals(attributesCache)) {
-				log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + vo);
-			}
-		}
+		compareAttributesFromCacheAndDB(attributesCache, attributesDB, vo, null);
 
 		return attributesDB;
 	}
@@ -1000,13 +970,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 		}
 		List<Attribute> attributesDB = getVirtualAttributes(new SingleBeanAttributeRowMapper<>(sess, this, group), AttributesManager.NS_GROUP_ATTR_VIRT);
 
-		if (attributesCache != null) {
-			Collections.sort(attributesDB);
-			Collections.sort(attributesCache);
-			if (!attributesDB.equals(attributesCache)) {
-				log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + group);
-			}
-		}
+		compareAttributesFromCacheAndDB(attributesCache, attributesDB, group, null);
 
 		return attributesDB;
 	}
@@ -1021,13 +985,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 		}
 		List<Attribute> attributesDB = getVirtualAttributes(new SingleBeanAttributeRowMapper<>(sess, this, host), AttributesManager.NS_HOST_ATTR_VIRT);
 
-		if (attributesCache != null) {
-			Collections.sort(attributesDB);
-			Collections.sort(attributesCache);
-			if (!attributesDB.equals(attributesCache)) {
-				log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + host);
-			}
-		}
+		compareAttributesFromCacheAndDB(attributesCache, attributesDB, host, null);
 
 		return attributesDB;
 	}
@@ -1042,13 +1000,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 		}
 		List<Attribute> attributesDB = getVirtualAttributes(new SingleBeanAttributeRowMapper<>(sess, this, resource), AttributesManager.NS_RESOURCE_ATTR_VIRT);
 
-		if (attributesCache != null) {
-			Collections.sort(attributesDB);
-			Collections.sort(attributesCache);
-			if (!attributesDB.equals(attributesCache)) {
-				log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + resource);
-			}
-		}
+		compareAttributesFromCacheAndDB(attributesCache, attributesDB, resource, null);
 
 		return attributesDB;
 	}
@@ -1063,13 +1015,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 		}
 		List<Attribute> attributesDB = getVirtualAttributes(new SingleBeanAttributeRowMapper<>(sess, this, user), AttributesManager.NS_USER_ATTR_VIRT);
 
-		if (attributesCache != null) {
-			Collections.sort(attributesDB);
-			Collections.sort(attributesCache);
-			if (!attributesDB.equals(attributesCache)) {
-				log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + user);
-			}
-		}
+		compareAttributesFromCacheAndDB(attributesCache, attributesDB, user, null);
 
 		return attributesDB;
 	}
@@ -1084,13 +1030,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 		}
 		List<Attribute> attributesDB = getVirtualAttributes(new SingleBeanAttributeRowMapper<>(sess, this, ues), AttributesManager.NS_UES_ATTR_VIRT);
 
-		if (attributesCache != null) {
-			Collections.sort(attributesDB);
-			Collections.sort(attributesCache);
-			if (!attributesDB.equals(attributesCache)) {
-				log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + ues);
-			}
-		}
+		compareAttributesFromCacheAndDB(attributesCache, attributesDB, ues, null);
 
 		return attributesDB;
 	}
@@ -1105,13 +1045,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 		}
 		List<Attribute> attributesDB = getVirtualAttributes(new MemberResourceAttributeRowMapper(sess, this, member, resource), AttributesManager.NS_MEMBER_RESOURCE_ATTR_VIRT);
 
-		if (attributesCache != null) {
-			Collections.sort(attributesDB);
-			Collections.sort(attributesCache);
-			if (!attributesDB.equals(attributesCache)) {
-				log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + member + " and " + resource);
-			}
-		}
+		compareAttributesFromCacheAndDB(attributesCache, attributesDB, member, resource);
 
 		return attributesDB;
 	}
@@ -1126,13 +1060,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 		}
 		List<Attribute> attributesDB = getVirtualAttributes(new UserFacilityAttributeRowMapper(sess, this, user, facility), AttributesManager.NS_USER_FACILITY_ATTR_VIRT);
 
-		if (attributesCache != null) {
-			Collections.sort(attributesDB);
-			Collections.sort(attributesCache);
-			if (!attributesDB.equals(attributesCache)) {
-				log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + facility + " and " + user);
-			}
-		}
+		compareAttributesFromCacheAndDB(attributesCache, attributesDB, user, facility);
 
 		return attributesDB;
 	}
@@ -1147,13 +1075,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 		}
 		List<Attribute> attributesDB =  getVirtualAttributes(new MemberGroupAttributeRowMapper(sess, this, member, group), AttributesManager.NS_MEMBER_GROUP_ATTR_VIRT);
 
-		if (attributesCache != null) {
-			Collections.sort(attributesDB);
-			Collections.sort(attributesCache);
-			if (!attributesDB.equals(attributesCache)) {
-				log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + member + " and " + group);
-			}
-		}
+		compareAttributesFromCacheAndDB(attributesCache, attributesDB, member, group);
 
 		return attributesDB;
 	}
@@ -1174,13 +1096,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where namespace=? or (namespace in (?,?) and (attr_value is not null or attr_value_text is not null))",
 					new SingleBeanAttributeRowMapper<>(sess, this, vo), vo.getId(), AttributesManager.NS_VO_ATTR_CORE, AttributesManager.NS_VO_ATTR_DEF, AttributesManager.NS_VO_ATTR_OPT);
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + vo);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, vo, null);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1205,13 +1121,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where namespace=? or (namespace in (?,?) and (attr_value is not null or attr_value_text is not null))",
 					new SingleBeanAttributeRowMapper<>(sess, this, group), group.getId(), AttributesManager.NS_GROUP_ATTR_CORE, AttributesManager.NS_GROUP_ATTR_DEF, AttributesManager.NS_GROUP_ATTR_OPT);
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + group);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, group, null);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1236,13 +1146,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where namespace=? or (namespace in (?,?) and (attr_value is not null or attr_value_text is not null))",
 					new SingleBeanAttributeRowMapper<>(sess, this, host), host.getId(), AttributesManager.NS_HOST_ATTR_CORE, AttributesManager.NS_HOST_ATTR_DEF, AttributesManager.NS_HOST_ATTR_OPT);
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + host);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, host, null);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1267,13 +1171,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"left join resource_attr_values on id=attr_id and resource_id=? " +
 							"where namespace=? or (namespace in (?,?) and (attr_value is not null or attr_value_text is not null))",
 					new SingleBeanAttributeRowMapper<>(sess, this, resource), resource.getId(), AttributesManager.NS_RESOURCE_ATTR_CORE, AttributesManager.NS_RESOURCE_ATTR_DEF, AttributesManager.NS_RESOURCE_ATTR_OPT);
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + resource);
-				}
-			}
+
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, resource, null);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1301,13 +1200,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 					resource.getId(), member.getId(),
 					AttributesManager.NS_MEMBER_RESOURCE_ATTR_DEF, AttributesManager.NS_MEMBER_RESOURCE_ATTR_OPT);
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + member + " and " + resource);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, member, resource);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1333,13 +1226,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 					new MemberGroupAttributeRowMapper(sess, this, member, group), group.getId(), member.getId(),
 					AttributesManager.NS_MEMBER_GROUP_ATTR_DEF, AttributesManager.NS_MEMBER_GROUP_ATTR_OPT);
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + member + " and " + group);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, member, group);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1380,13 +1267,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where namespace in ( :nSO,:nSD,:nSV ) and attr_names.attr_name in ( :attrNames )",
 					parameters, new MemberResourceAttributeRowMapper(sess, this, member, resource));
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + member + " and " + resource + " and their names are: " + attrNames);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, member, resource, attrNames);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1427,13 +1308,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 					parameters, new GroupResourceAttributeRowMapper(sess, this, group, resource));
 
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + group + " and " + resource + " and their names are: " + attrNames);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, group, resource, attrNames);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1473,13 +1348,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where namespace in ( :nSO,:nSD,:nSV ) and attr_names.attr_name in ( :attrNames )",
 					parameters, new UserFacilityAttributeRowMapper(sess, this, user, facility));
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + user + " and " + facility + " and their names are: " + attrNames);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, user, facility, attrNames);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1519,13 +1388,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where namespace in ( :nSO,:nSD,:nSV ) and attr_names.attr_name in ( :attrNames )",
 					parameters, new MemberGroupAttributeRowMapper(sess, this, member, group));
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + member + " and " + group + " and their names are: " + attrNames);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, member, group, attrNames);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1551,13 +1414,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 					new SingleBeanAttributeRowMapper<>(sess, this, member), member.getId(),
 					AttributesManager.NS_MEMBER_ATTR_CORE, AttributesManager.NS_MEMBER_ATTR_OPT, AttributesManager.NS_MEMBER_ATTR_DEF);
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + member);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, member, null);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1598,13 +1455,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where namespace in ( :nSC,:nSO,:nSD,:nSV ) and attr_names.attr_name in ( :attrNames )",
 					parameters, new SingleBeanAttributeRowMapper<>(sess, this, vo));
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + vo + " and their names are: " + attrNames);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, vo, null, attrNames);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1636,13 +1487,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where namespace in ( :nSC,:nSO,:nSD ) and attr_names.attr_name LIKE :startPartOfName",
 					parameters, new SingleBeanAttributeRowMapper<>(sess, this, group));
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + group);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, group, null, startPartOfName);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1674,13 +1519,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where namespace in ( :nSC,:nSO,:nSD ) and attr_names.attr_name LIKE :startPartOfName",
 					parameters, new SingleBeanAttributeRowMapper<>(sess, this, resource));
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + resource);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, resource, null, startPartOfName);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1720,13 +1559,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where namespace in ( :nSC,:nSO,:nSD,:nSV ) and attr_names.attr_name in ( :attrNames )",
 					parameters, new SingleBeanAttributeRowMapper<>(sess, this, member));
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + member + " and their names are: " + attrNames);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, member, null, attrNames);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1766,13 +1599,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where namespace in ( :nSC,:nSO,:nSD,:nSV ) and attr_names.attr_name in ( :attrNames )",
 					parameters, new SingleBeanAttributeRowMapper<>(sess, this, group));
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + group + " and their names are: " + attrNames);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, group, null, attrNames);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1784,6 +1611,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 
 	@Override
 	public List<Attribute> getAttributes(PerunSession sess, Resource resource, List<String> attrNames) throws InternalErrorException {
+		List<Attribute> attributesCache = null;
+
 		if(!CacheManager.isCacheDisabled()) {
 			List<String> controlledAttrNames = new ArrayList<>();
 
@@ -1805,10 +1634,14 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 		parameters.addValue("attrNames", attrNames);
 
 		try {
-			return namedParameterJdbcTemplate.query("select " + getAttributeMappingSelectQuery("resattr") + " from attr_names " +
+			List<Attribute> attributesDB = namedParameterJdbcTemplate.query("select " + getAttributeMappingSelectQuery("resattr") + " from attr_names " +
 							"left join resource_attr_values resattr on id=resattr.attr_id and resource_id=:rId " +
 							"where namespace in ( :nSC,:nSO,:nSD,:nSV ) and attr_names.attr_name in ( :attrNames )",
 					parameters, new SingleBeanAttributeRowMapper<>(sess, this, resource));
+
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, resource, null, attrNames);
+
+			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
 			return new ArrayList<>();
 		} catch (RuntimeException ex) {
@@ -1830,13 +1663,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 					new UserFacilityAttributeRowMapper(sess, this, user, facility), facility.getId(), user.getId(),
 					AttributesManager.NS_USER_FACILITY_ATTR_DEF, AttributesManager.NS_USER_FACILITY_ATTR_OPT);
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + facility + " and " + user);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, user, facility);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1861,13 +1688,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 					new SingleBeanAttributeRowMapper<>(sess, this, facility), facility.getId(),
 					AttributesManager.NS_USER_FACILITY_ATTR_DEF, AttributesManager.NS_USER_FACILITY_ATTR_OPT);
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + facility);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, facility, null);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1895,13 +1716,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 					new SingleBeanAttributeRowMapper<>(sess, this, user), user.getId(),
 					AttributesManager.NS_USER_ATTR_CORE, AttributesManager.NS_USER_ATTR_DEF, AttributesManager.NS_USER_ATTR_OPT);
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + user);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, user, null);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1942,13 +1757,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where namespace in ( :nSC,:nSO,:nSD,:nSV ) and attr_names.attr_name in ( :attrNames )",
 					parameters, new SingleBeanAttributeRowMapper<>(sess, this, user));
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + user);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, user, null, attrNames);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -1991,13 +1800,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 					parameters, new SingleBeanAttributeRowMapper<>(sess, this, ues));
 
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + ues + " and their names are: " + attrNames);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, ues, null, attrNames);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -2022,14 +1825,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 					new GroupResourceAttributeRowMapper(sess, this, group, resource), resource.getId(), group.getId(),
 					AttributesManager.NS_GROUP_RESOURCE_ATTR_DEF, AttributesManager.NS_GROUP_RESOURCE_ATTR_OPT);
 
-
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + resource + " and " + group);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, group, resource);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -2052,13 +1848,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 					new SingleBeanAttributeRowMapper<>(sess, this, null), key, AttributesManager.NS_ENTITYLESS_ATTR_DEF, AttributesManager.NS_ENTITYLESS_ATTR_OPT);
 
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + key);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, key, null);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -2084,13 +1874,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 					new SingleBeanAttributeRowMapper<>(sess, this, ues), ues.getId(),
 					AttributesManager.NS_UES_ATTR_CORE, AttributesManager.NS_UES_ATTR_DEF, AttributesManager.NS_UES_ATTR_OPT);
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + ues);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, ues, null);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -2131,13 +1915,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 					new SingleBeanAttributeRowMapper<>(sess, this, null), attrName, AttributesManager.NS_ENTITYLESS_ATTR_DEF, AttributesManager.NS_ENTITYLESS_ATTR_OPT);
 
 
-			if (attributesCache != null) {
-				Collections.sort(attributesDB);
-				Collections.sort(attributesCache);
-				if (!attributesDB.equals(attributesCache)) {
-					log.error("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + attrName);
-				}
-			}
+			compareAttributesFromCacheAndDB(attributesCache, attributesDB, null, null, attrName);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -2234,11 +2012,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 		try {
 			Attribute attributeDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("facility_attr_values") + " from attr_names left join facility_attr_values on id=attr_id and facility_id=? where attr_name=?", new SingleBeanAttributeRowMapper<>(sess, this, facility), facility.getId(), attributeName);
 
-			if (attributeCache != null) {
-				if (!attributeCache.equals(attributeDB)) {
-					log.error("The attributes do not match, attribute from cache is: " + attributeCache + " while attribute from db is: " + attributeDB + " the attribute belongs to " + facility + " and its name is " + attributeName);
-				}
-			}
+			compareAttributeFromCacheAndDB(attributeCache, attributeDB, facility, null, attributeName);
 
 			return attributeDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -2286,11 +2060,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 		try {
 			Attribute attributesDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("vo_attr_values") + " from attr_names left join vo_attr_values on id=attr_id and vo_id=? where attr_name=?", new SingleBeanAttributeRowMapper<>(sess, this, vo), vo.getId(), attributeName);
 
-			if (attributesCache != null) {
-				if (!attributesCache.equals(attributesDB)) {
-					log.error("The attributes do not match, attribute from cache is: " + attributesCache + " while attribute from db is: " + attributesDB + " the attribute belongs to " + vo + " and its name is " + attributeName);
-				}
-			}
+			compareAttributeFromCacheAndDB(attributesCache, attributesDB, vo, null, attributeName);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -2312,11 +2082,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 		try {
 			Attribute attributesDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("group_attr_values") + " from attr_names left join group_attr_values on id=attr_id and group_id=? where attr_name=?", new SingleBeanAttributeRowMapper<>(sess, this, group), group.getId(), attributeName);
 
-			if (attributesCache != null) {
-				if (!attributesCache.equals(attributesDB)) {
-					log.error("The attributes do not match, attribute from cache is: " + attributesCache + " while attribute from db is: " + attributesDB + " the attribute belongs to " + group + " and its name is " + attributeName);
-				}
-			}
+			compareAttributeFromCacheAndDB(attributesCache, attributesDB, group, null, attributeName);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -2338,11 +2104,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 		try {
 			Attribute attributesDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("resource_attr_values") + " from attr_names left join resource_attr_values on id=attr_id and resource_id=? where attr_name=?", new SingleBeanAttributeRowMapper<>(sess, this, resource), resource.getId(), attributeName);
 
-			if (attributesCache != null) {
-				if (!attributesCache.equals(attributesDB)) {
-					log.error("The attributes do not match, attribute from cache is: " + attributesCache + " while attribute from db is: " + attributesDB + " the attribute belongs to " + resource + " and its name is " + attributeName);
-				}
-			}
+			compareAttributeFromCacheAndDB(attributesCache, attributesDB, resource, null, attributeName);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -2368,11 +2130,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where attr_name=?",
 					new MemberResourceAttributeRowMapper(sess, this, member, resource), resource.getId(), member.getId(), attributeName);
 
-			if (attributesCache != null) {
-				if (!attributesCache.equals(attributesDB)) {
-					log.error("The attributes do not match, attribute from cache is: " + attributesCache + " while attribute from db is: " + attributesDB + " the attribute belongs to " + member + " and " + resource + " and its name is " + attributeName);
-				}
-			}
+			compareAttributeFromCacheAndDB(attributesCache, attributesDB, member, resource, attributeName);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -2398,11 +2156,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where attr_name=?",
 					new MemberGroupAttributeRowMapper(sess, this, member, group), group.getId(), member.getId(), attributeName);
 
-			if (attributesCache != null) {
-				if (!attributesCache.equals(attributesDB)) {
-					log.error("The attributes do not match, attribute from cache is: " + attributesCache + " while attribute from db is: " + attributesDB + " the attribute belongs to " + member + " and " + group + " and its name is " + attributeName);
-				}
-			}
+			compareAttributeFromCacheAndDB(attributesCache, attributesDB, member, group, attributeName);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -2428,11 +2182,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where attr_name=?",
 					new SingleBeanAttributeRowMapper<>(sess, this, member), member.getId(), attributeName);
 
-			if (attributesCache != null) {
-				if (!attributesCache.equals(attributesDB)) {
-					log.error("The attributes do not match, attribute from cache is: " + attributesCache + " while attribute from db is: " + attributesDB + " the attribute belongs to " + member + " and its name is " + attributeName);
-				}
-			}
+			compareAttributeFromCacheAndDB(attributesCache, attributesDB, member, null, attributeName);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -2457,11 +2207,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where attr_name=?",
 					new UserFacilityAttributeRowMapper(sess, this, user, facility), facility.getId(), user.getId(), attributeName);
 
-			if (attributesCache != null) {
-				if (!attributesCache.equals(attributesDB)) {
-					log.error("The attributes do not match, attribute from cache is: " + attributesCache + " while attribute from db is: " + attributesDB + " the attribute belongs to " + facility + " and " + user + " and its name is " + attributeName);
-				}
-			}
+			compareAttributeFromCacheAndDB(attributesCache, attributesDB, user, facility, attributeName);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -2487,11 +2233,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where attr_name=?",
 					new SingleBeanAttributeRowMapper<>(sess, this, user), user.getId(), attributeName);
 
-			if (attributesCache != null) {
-				if (!attributesCache.equals(attributesDB)) {
-					log.error("The attributes do not match, attribute from cache is: " + attributesCache + " while attribute from db is: " + attributesDB + " the attribute belongs to " + user + " and its name is " + attributeName);
-				}
-			}
+			compareAttributeFromCacheAndDB(attributesCache, attributesDB, user, null, attributeName);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -2515,11 +2257,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 			Attribute attributesDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("host_attr_values") + " from attr_names " +
 					"left join host_attr_values on id=attr_id and host_id=? where attr_name=?", new SingleBeanAttributeRowMapper<>(sess, this, host), host.getId(), attributeName);
 
-			if (attributesCache != null) {
-				if (!attributesCache.equals(attributesDB)) {
-					log.error("The attributes do not match, attribute from cache is: " + attributesCache + " while attribute from db is: " + attributesDB + " the attribute belongs to " + host + " and its name is " + attributeName);
-				}
-			}
+			compareAttributeFromCacheAndDB(attributesCache, attributesDB, host, null, attributeName);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -2531,16 +2269,22 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 
 	@Override
 	public Attribute getAttribute(PerunSession sess, Resource resource, Group group, String attributeName) throws InternalErrorException, AttributeNotExistsException {
+		Attribute attributesCache = null;
+
 		if(!CacheManager.isCacheDisabled()) {
 			Attribute attr = perun.getCacheManager().getAttributeByName(attributeName, new Holder(group.getId(), Holder.HolderType.GROUP), new Holder(resource.getId(), Holder.HolderType.RESOURCE));
-			return setValueOfAttribute(sess, attr, group, resource);
+			attributesCache = setValueOfAttribute(sess, attr, group, resource);
 		}
 
 		try {
-			return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("grp_res") + " from attr_names " +
+			Attribute attributesDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("grp_res") + " from attr_names " +
 							"left join    group_resource_attr_values     grp_res      on id=grp_res.attr_id     and   resource_id=? and group_id=? " +
 							"where attr_name=?",
 					new GroupResourceAttributeRowMapper(sess, this, group, resource), resource.getId(), group.getId(), attributeName);
+
+			compareAttributeFromCacheAndDB(attributesCache, attributesDB, group, resource, attributeName);
+
+			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
 			throw new AttributeNotExistsException("Attribute name: \"" + attributeName + "\"", ex);
 		} catch (RuntimeException ex) {
@@ -2563,11 +2307,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where attr_name=?",
 					new SingleBeanAttributeRowMapper<>(sess, this, null), key, attributeName);
 
-			if (attributesCache != null) {
-				if (!attributesCache.equals(attributesDB)) {
-					log.error("The attributes do not match, attribute from cache is: " + attributesCache + " while attribute from db is: " + attributesDB + " the attribute belongs to " + key + " and its name is " + attributeName);
-				}
-			}
+			compareAttributeFromCacheAndDB(attributesCache, attributesDB, key, null, attributeName);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -2629,11 +2369,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 							"where attr_name=?",
 					new SingleBeanAttributeRowMapper<>(sess, this, ues), ues.getId(), attributeName);
 
-			if (attributesCache != null) {
-				if (!attributesCache.equals(attributesDB)) {
-					log.error("The attributes do not match, attribute from cache is: " + attributesCache + " while attribute from db is: " + attributesDB + " the attribute belongs to " + ues + " and its name is " + attributeName);
-				}
-			}
+			compareAttributeFromCacheAndDB(attributesCache, attributesDB, ues, null, attributeName);
 
 			return attributesDB;
 		} catch (EmptyResultDataAccessException ex) {
@@ -6761,6 +6497,88 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 		Timestamp time = new Timestamp(System.currentTimeMillis());
 		attribute.setModifiedAt(time.toString());
 		return attribute;
+	}
+
+	private void compareAttributesFromCacheAndDB(List<Attribute> attributesCache, List<Attribute> attributesDB, Object entity, Object entity2) {
+		if (attributesCache != null) {
+			Collections.sort(attributesDB);
+			Collections.sort(attributesCache);
+			if (!attributesDB.equals(attributesCache)) {
+				StringBuilder message = new StringBuilder("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + entity);
+				if (entity2 != null) message.append(" and ").append(entity2);
+				log.error(message.toString());
+			}
+		}
+	}
+
+	private void compareAttributesFromCacheAndDB(List<Attribute> attributesCache, List<Attribute> attributesDB, Object entity, Object entity2, List<String> attrNames) {
+		if (attributesCache != null) {
+			Collections.sort(attributesDB);
+			Collections.sort(attributesCache);
+			if (!attributesDB.equals(attributesCache)) {
+				StringBuilder message = new StringBuilder("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + entity);
+				if (entity2 != null) message.append(" and ").append(entity2);
+				message.append(" names of attributes are: ").append(attrNames);
+				log.error(message.toString());
+			}
+		}
+	}
+
+	private void compareAttributesFromCacheAndDB(List<Attribute> attributesCache, List<Attribute> attributesDB, Object entity, Object entity2, String partOfName) {
+		if (attributesCache != null) {
+			Collections.sort(attributesDB);
+			Collections.sort(attributesCache);
+			if (!attributesDB.equals(attributesCache)) {
+				StringBuilder message = new StringBuilder("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + entity);
+				if (entity2 != null) message.append(" and ").append(entity2);
+				message.append(" the attributes start with: ").append(partOfName);
+				log.error(message.toString());
+			}
+		}
+	}
+
+	private void compareAttributeFromCacheAndDB(Attribute attributeCache, Attribute attributeDB, Object entity, Object entity2) {
+		if (attributeCache != null) {
+			if (!attributeCache.equals(attributeDB)) {
+				StringBuilder message = new StringBuilder("The attributes do not match, attribute from cache is: " + attributeCache + " while attribute from db is: " + attributeDB + " the attribute belongs to " + entity);
+				if (entity2 != null) message.append(" and ").append(entity2);
+				log.error(message.toString());
+			}
+		}
+	}
+
+	private void compareAttributeFromCacheAndDB(Attribute attributeCache, Attribute attributeDB, Object entity, Object entity2, String attributeName) {
+		if (attributeCache != null) {
+			if (!attributeCache.equals(attributeDB)) {
+				StringBuilder message = new StringBuilder("The attributes do not match, attribute from cache is: " + attributeCache + " while attribute from db is: " + attributeDB + " the attribute belongs to " + entity);
+				if (entity2 != null) message.append(" and ").append(entity2);
+				message.append(" name of attribute is: ").append(attributeName);
+				log.error(message.toString());
+			}
+		}
+	}
+
+	private void compareAttributeDefinitionsFromCacheAndDB(List<AttributeDefinition> attributesCache, List<AttributeDefinition> attributesDB, Object entity, Object entity2) {
+		if (attributesCache != null) {
+			Collections.sort(attributesDB);
+			Collections.sort(attributesCache);
+			if (!attributesCache.equals(attributesDB)) {
+				StringBuilder message = new StringBuilder("The attributes do not match, attributes from cache are: " + attributesCache + " while attributes from db are: " + attributesDB + " the attributes belong to " + entity);
+				if (entity2 != null) message.append(" and ").append(entity2);
+				log.error(message.toString());
+			}
+		}
+	}
+
+	private void compareAttributeDefinitionFromCacheAndDB(AttributeDefinition attributesCache, AttributeDefinition attributesDB, Object entity, Object entity2, String namespace) {
+		if (attributesCache != null) {
+			if (!attributesCache.equals(attributesDB)) {
+				StringBuilder message = new StringBuilder("The attribute definitions do not match, attribute definition from cache is: " + attributesCache + " while definition from db is: " + attributesDB + " the definitions belong to " + entity);
+				if (entity2 != null) message.append(" and ").append(entity2);
+				message.append(" its from namespace: ").append(namespace);
+				log.error(message.toString());
+			}
+		}
 	}
 
 	public void setPerun(Perun perun) {
