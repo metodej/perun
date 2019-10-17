@@ -631,24 +631,12 @@ http://www.springframework.org/schema/aop http://www.springframework.org/schema/
 			<!--  this list will be added to built-in defaultAttributeDescriptions -->
 			<list>
 				<bean class="cz.metacentrum.perun.ldapc.model.impl.PerunAttributeDesc">
-					<property name="name" value="entityID" />
+					<property name="name" value="capabilities" />
 					<property name="required" value="false" />
-					<property name="deleted" value="true" />
-					<property name="singleValueExtractor">
-						<bean class="cz.metacentrum.perun.ldapc.model.impl.SingleAttributeValueExtractor">
-							<property name="name" value="entityID" />
-							<property name="namespace" value="urn:perun:facility:attribute-def:def" />
-						</bean>
-					</property>
-				</bean>
-				<bean class="cz.metacentrum.perun.ldapc.model.impl.PerunAttributeDesc">
-					<property name="name" value="OIDCClientID" />
-					<property name="required" value="false" />
-					<property name="deleted" value="true" />
-					<property name="singleValueExtractor">
-						<bean class="cz.metacentrum.perun.ldapc.model.impl.SingleAttributeValueExtractor">
-							<property name="name" value="OIDCClientID" />
-							<property name="namespace" value="urn:perun:facility:attribute-def:def" />
+					<property name="multipleValuesExtractor">
+						<bean class="cz.metacentrum.perun.ldapc.model.impl.MultipleAttributeValueExtractor">
+							<property name="name" value="capabilities" />
+							<property name="namespace" value="urn:perun:resource:attribute-def:def" />
 						</bean>
 					</property>
 				</bean>
@@ -681,18 +669,76 @@ http://www.springframework.org/schema/aop http://www.springframework.org/schema/
 						</bean>
 					</property>
 				</bean>
-				<!-- not used (yet)
 				<bean class="cz.metacentrum.perun.ldapc.model.impl.PerunAttributeDesc">
-					<property name="name" value="OIDCCheckGroupMembership" />
+					<property name="name" value="checkGroupMembership" />
 					<property name="required" value="false" />
 					<property name="singleValueExtractor">
 						<bean class="cz.metacentrum.perun.ldapc.model.impl.SingleAttributeValueExtractor">
-							<property name="name" value="OIDCCheckGroupMembership" />
+							<property name="name" value="checkGroupMembership" />
 							<property name="namespace" value="urn:perun:facility:attribute-def:def" />
 						</bean>
 					</property>
 				</bean>
- 				-->
+				<bean class="cz.metacentrum.perun.ldapc.model.impl.PerunAttributeDesc">
+					<property name="name" value="voShortNames" />
+					<property name="required" value="false" />
+					<property name="multipleValuesExtractor">
+						<bean class="cz.metacentrum.perun.ldapc.model.impl.MultipleAttributeValueExtractor">
+							<property name="namespace" value="urn:perun:facility:attribute-def:virt" />
+							<property name="name" value="voShortNames" />
+						</bean>
+					</property>
+				</bean>
+				<bean class="cz.metacentrum.perun.ldapc.model.impl.PerunAttributeDesc">
+					<property name="name" value="wayfFilter" />
+					<property name="required" value="false" />
+					<property name="singleValueExtractor">
+						<bean class="cz.metacentrum.perun.ldapc.model.impl.SingleAttributeValueExtractor">
+							<property name="name" value="wayfFilter" />
+							<property name="namespace" value="urn:perun:facility:attribute-def:def" />
+						</bean>
+					</property>
+				</bean>
+				<bean class="cz.metacentrum.perun.ldapc.model.impl.PerunAttributeDesc">
+					<property name="name" value="wayfEFilter" />
+					<property name="required" value="false" />
+					<property name="singleValueExtractor">
+						<bean class="cz.metacentrum.perun.ldapc.model.impl.SingleAttributeValueExtractor">
+							<property name="name" value="wayfEFilter" />
+							<property name="namespace" value="urn:perun:facility:attribute-def:def" />
+						</bean>
+					</property>
+				</bean>
+				<bean class="cz.metacentrum.perun.ldapc.model.impl.PerunAttributeDesc">
+					<property name="name" value="isTestSp" />
+					<property name="required" value="false" />
+					<property name="singleValueExtractor">
+						<bean class="cz.metacentrum.perun.ldapc.model.impl.SingleAttributeValueExtractor">
+							<property name="name" value="isTestSp" />
+							<property name="namespace" value="urn:perun:facility:attribute-def:def" />
+						</bean>
+					</property>
+				</bean>
+				<bean class="cz.metacentrum.perun.ldapc.model.impl.PerunAttributeDesc">
+					<property name="name" value="proxyIdentifiers" />
+					<property name="required" value="false" />
+					<property name="multipleValuesExtractor">
+						<bean class="cz.metacentrum.perun.ldapc.model.impl.MultipleAttributeValueExtractor">
+							<property name="namespace" value="urn:perun:facility:attribute-def:def" />
+							<property name="name" value="proxyIdentifiers" />
+						</bean>
+					</property>
+				</bean>
+				<bean class="cz.metacentrum.perun.ldapc.model.impl.PerunAttributeDesc">
+					<property name="name" value="showOnServiceList" />
+					<property name="required" value="false" />
+					<property name="singleValueExtractor">
+						<bean class="cz.metacentrum.perun.ldapc.model.impl.SingleAttributeValueExtractor">
+							<property name="name" value="showOnServiceList" />
+							<property name="namespace" value="urn:perun:facility:attribute-def:def" />
+						</bean>
+					</property>
+				</bean>
 			</list>
 		</property>
 		<property name="attributeDescriptionsExt" ref="perunFacilityAttributesExt" />
