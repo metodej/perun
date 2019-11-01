@@ -10,10 +10,12 @@ import cz.metacentrum.perun.core.implApi.modules.attributes.UserAttributesModule
 import cz.metacentrum.perun.core.implApi.modules.attributes.UserAttributesModuleImplApi;
 import org.apache.commons.codec.binary.Base64;
 
-import javax.security.cert.CertificateException;
-import javax.security.cert.X509Certificate;
-import java.util.HashMap;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * @author Michal Stava <stavamichal@gmail.com>
@@ -21,9 +23,9 @@ import java.util.LinkedHashMap;
 public class urn_perun_user_attribute_def_def_userCertificates extends UserAttributesModuleAbstract implements UserAttributesModuleImplApi {
 
 	@Override
-	public void checkAttributeSemantics(PerunSessionImpl sess, User user, Attribute attribute) throws WrongAttributeValueException {
+	public void checkAttributeSyntax(PerunSessionImpl sess, User user, Attribute attribute) throws WrongAttributeValueException {
 		try {
-			HashMap<String,String> certs = (HashMap<String,String>) attribute.getValue();
+			Map<String,String> certs = attribute.valueAsMap();
 
 			if (certs != null) {
 				for (String certDN : certs.keySet()) {
@@ -33,7 +35,15 @@ public class urn_perun_user_attribute_def_def_userCertificates extends UserAttri
 					String certWithoutBegin = cert.replaceFirst("-----BEGIN CERTIFICATE-----", "");
 					String rawCert = certWithoutBegin.replaceFirst("-----END CERTIFICATE-----", "");
 
-					X509Certificate.getInstance(Base64.decodeBase64(rawCert.getBytes()));
+					CertificateFactory certFact = CertificateFactory.getInstance("X.509");
+					try (ByteArrayInputStream bis = new ByteArrayInputStream(Base64.decodeBase64(rawCert.getBytes()))) {
+						certFact.generateCertificate(bis);
+					} catch (IllegalArgumentException e) {
+						throw new WrongAttributeValueException(attribute, user, "Certificate is not in base64 format!");
+					} catch (IOException e) {
+						throw new InternalError(e);
+					}
+
 
 				}
 			}
