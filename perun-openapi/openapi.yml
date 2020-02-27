@@ -973,6 +973,14 @@ components:
       in: query
       required: true
 
+    facilityName:
+      name: facility
+      description: "name of Facility"
+      schema:
+        type: string
+      in: query
+      required: true
+
     optionalFacilityId:
       name: facility
       description: "id of Facility"
@@ -1178,6 +1186,14 @@ components:
     ownerId:
       name: owner
       description: "id of Owner"
+      schema:
+        type: integer
+      in: query
+      required: true
+
+    ownerName:
+      name: owner
+      description: "name of Owner"
       schema:
         type: integer
       in: query
@@ -4853,6 +4869,20 @@ paths:
         default:
           $ref: '#/components/responses/ExceptionResponse'
 
+  /json/facilitiesManager/getOwnersByNameOfFacility:
+    get:
+      tags:
+        - FacilitiesManager
+      operationId: getOwnersByNameOfFacility
+      summary: Returns owners of a facility.
+      parameters:
+        - $ref: '#/components/parameters/facilityName'
+      responses:
+        '200':
+          $ref: '#/components/responses/ListOfOwnersResponse'
+        default:
+          $ref: '#/components/responses/ExceptionResponse'
+
   /urlinjsonout/facilitiesManager/addOwner:
     post:
       tags:
@@ -4868,6 +4898,21 @@ paths:
         default:
           $ref: '#/components/responses/ExceptionResponse'
 
+  /urlinjsonout/facilitiesManager/addOwnerByNames:
+    post:
+      tags:
+        - FacilitiesManager
+      operationId: addOwnerByNames
+      summary: Adds owner of a facility.
+      parameters:
+        - $ref: '#/components/parameters/facilityName'
+        - $ref: '#/components/parameters/ownerName'
+      responses:
+        '200':
+          $ref: '#/components/responses/VoidResponse'
+        default:
+          $ref: '#/components/responses/ExceptionResponse'
+
   /urlinjsonout/facilitiesManager/removeOwner:
     post:
       tags:
@@ -4877,6 +4922,21 @@ paths:
       parameters:
         - $ref: '#/components/parameters/facilityId'
         - $ref: '#/components/parameters/ownerId'
+      responses:
+        '200':
+          $ref: '#/components/responses/VoidResponse'
+        default:
+          $ref: '#/components/responses/ExceptionResponse'
+
+  /urlinjsonout/facilitiesManager/removeOwnerByNames:
+    post:
+      tags:
+        - FacilitiesManager
+      operationId: removeOwnerByNames
+      summary: Removes owner from a facility.
+      parameters:
+        - $ref: '#/components/parameters/facilityName'
+        - $ref: '#/components/parameters/ownerName'
       responses:
         '200':
           $ref: '#/components/responses/VoidResponse'
@@ -5039,6 +5099,20 @@ paths:
         default:
           $ref: '#/components/responses/ExceptionResponse'
 
+  /json/facilitiesManager/getHostsByNameOfFacility:
+    get:
+      tags:
+        - FacilitiesManager
+      operationId: getHostsByNameOfFacility
+      summary: Returns Hosts of a Facility.
+      parameters:
+        - $ref: '#/components/parameters/facilityName'
+      responses:
+        '200':
+          $ref: '#/components/responses/ListOfHostsResponse'
+        default:
+          $ref: '#/components/responses/ExceptionResponse'
+
   /json/facilitiesManager/getHostById:
     get:
       tags:
@@ -5140,6 +5214,21 @@ paths:
         default:
           $ref: '#/components/responses/ExceptionResponse'
 
+  /urlinjsonout/facilitiesManager/addHostToFacilityByName:
+    post:
+      tags:
+        - FacilitiesManager
+      operationId: addHostToFacilityByName
+      summary: Adds a host to the Facility.
+      parameters:
+        - $ref: '#/components/parameters/facilityName'
+        - { name: hostname, description: "DNS name of host", schema: { type: string },  in: query, required: true }
+      responses:
+        '200':
+          $ref: '#/components/responses/ListOfHostsResponse'
+        default:
+          $ref: '#/components/responses/ExceptionResponse'
+
   /urlinjsonout/facilitiesManager/removeHost:
     post:
       tags:
@@ -5148,6 +5237,21 @@ paths:
       summary: Removes a host.
       parameters:
         - $ref: '#/components/parameters/hostId'
+      responses:
+        '200':
+          $ref: '#/components/responses/VoidResponse'
+        default:
+          $ref: '#/components/responses/ExceptionResponse'
+
+  /urlinjsonout/facilitiesManager/removeHostsByName:
+    post:
+      tags:
+        - FacilitiesManager
+      operationId: removeHostsByName
+      summary: Removes a hosts with given hostname in facility.
+      parameters:
+        - $ref: '#/components/parameters/facilityName'
+        - $ref: '#/components/parameters/hostName'
       responses:
         '200':
           $ref: '#/components/responses/VoidResponse'
@@ -5236,6 +5340,24 @@ paths:
         default:
           $ref: '#/components/responses/ExceptionResponse'
 
+  /json/facilitiesManager/getAdminsByNameOfFacility:
+    get:
+      tags:
+        - FacilitiesManager
+      operationId: getAdminsByNameOfFacility
+      description: |
+        Get list of all facility administrators for supported role and given facility.
+        If onlyDirectAdmins is true, return only direct admins of the group for supported role.
+        Supported roles: FacilityAdmin
+      parameters:
+        - $ref: '#/components/parameters/facilityName'
+        - { name: onlyDirectAdmins, schema: { type: boolean }, in: query, required: true, description: "if true, get only direct facility administrators (if false, get both direct and indirect)"}
+      responses:
+        '200':
+          $ref: '#/components/responses/ListOfUsersResponse'
+        default:
+          $ref: '#/components/responses/ExceptionResponse'
+
   /json/facilitiesManager/getAdminGroups:
     get:
       tags:
@@ -5244,6 +5366,20 @@ paths:
       summary: Get all Facility group admins.
       parameters:
         - $ref: '#/components/parameters/facilityId'
+      responses:
+        '200':
+          $ref: '#/components/responses/ListOfGroupsResponse'
+        default:
+          $ref: '#/components/responses/ExceptionResponse'
+
+  /json/facilitiesManager/getAdminGroupsByNameOfFacility:
+    get:
+      tags:
+        - FacilitiesManager
+      operationId: getFacilityAdminGroups
+      summary: Get all Facility group admins.
+      parameters:
+        - $ref: '#/components/parameters/facilityName'
       responses:
         '200':
           $ref: '#/components/responses/ListOfGroupsResponse'

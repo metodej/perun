@@ -66,6 +66,18 @@ public interface OwnersManagerBl {
 	Owner getOwnerById(PerunSession perunSession, int id) throws InternalErrorException, OwnerNotExistsException;
 
 	/**
+	 * Find owner by name.
+	 *
+	 * @param perunSession
+	 * @param id
+	 *
+	 * @return Owner with specified name
+	 *
+	 * @throws InternalErrorException
+	 */
+	Owner getOwnerByName(PerunSession perunSession, String name) throws InternalErrorException, OwnerNotExistsException;
+
+	/**
 	 * Return all owners.
 	 *
 	 * @param perunSession

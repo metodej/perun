@@ -107,6 +107,23 @@ public class OwnersManagerEntry implements OwnersManager {
 	}
 
 	@Override
+	public Owner getOwnerByName(PerunSession sess, String name) throws OwnerNotExistsException, InternalErrorException, PrivilegeException {
+		Utils.checkPerunSession(sess);
+
+		// Authorization
+		if (!AuthzResolver.isAuthorized(sess, Role.SELF) &&
+			!AuthzResolver.isAuthorized(sess, Role.VOADMIN) &&
+			!AuthzResolver.isAuthorized(sess, Role.VOOBSERVER) &&
+			!AuthzResolver.isAuthorized(sess, Role.GROUPADMIN) &&
+			!AuthzResolver.isAuthorized(sess, Role.FACILITYADMIN) &&
+			!AuthzResolver.isAuthorized(sess, Role.RPC)) {
+			throw new PrivilegeException(sess, "getOwnerByName");
+		}
+
+		return getOwnersManagerBl().getOwnerByName(sess, name);
+	}
+
+	@Override
 	public List<Owner> getOwners(PerunSession sess) throws InternalErrorException, PrivilegeException {
 		Utils.checkPerunSession(sess);
 
