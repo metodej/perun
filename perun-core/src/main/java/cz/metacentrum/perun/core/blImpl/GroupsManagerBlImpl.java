@@ -661,10 +661,15 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 			throw new GroupMoveNotAllowedException("It is not possible to move Members group.", movingGroup, destinationGroup);
 		}
 
+		Map<Member, MemberGroupStatus> previousStatuses = new HashMap<>();
+
 		// check if had parent group
 		Group previousParent;
 		try {
 			previousParent = getParentGroup(sess, movingGroup);
+			for (Member affectedMember : getGroupMembers(sess, previousParent)) {
+				previousStatuses.put(affectedMember, getTotalMemberGroupStatus(sess, affectedMember, previousParent));
+			}
 		} catch (ParentGroupNotExistsException e) {
 			previousParent = null;
 		}
@@ -791,9 +796,10 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 
 		for(Member member : movingGroupMembers) {
 			if (previousParent != null) {
+				MemberGroupStatus previousStatus = previousStatuses.get(member);
 
 				// calculate new member-group statuses for members from previous moving group parent
-				recalculateMemberGroupStatusRecursively(sess, member, previousParent);
+				recalculateMemberGroupStatusRecursively(sess, member, previousParent, previousStatus);
 			}
 		}
 
@@ -930,7 +936,7 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 		if (!VosManager.MEMBERS_GROUP.equals(group.getName())) {
 
 			// recalculate member group state
-			recalculateMemberGroupStatusRecursively(sess, member, group);
+			recalculateMemberGroupStatusRecursively(sess, member, group, null);
 		}
 	}
 
@@ -1091,6 +1097,7 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 
 		lockGroupMembership(group, Collections.singletonList(member));
 
+		MemberGroupStatus previousStatus = getTotalMemberGroupStatus(sess, member, group);
 		member.setSourceGroupId(group.getId());
 		getGroupsManagerImpl().removeMember(sess, group, member);
 		if (this.getGroupsManagerImpl().isGroupMember(sess, group, member)) {
@@ -1115,7 +1122,7 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 		}
 
 		if (!VosManager.MEMBERS_GROUP.equals(group.getName())) {
-			recalculateMemberGroupStatusRecursively(sess, member, group);
+			recalculateMemberGroupStatusRecursively(sess, member, group, previousStatus);
 		}
 
 		if (!getGroupsManagerImpl().isGroupMember(sess, group, member)) {
@@ -4703,16 +4710,25 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 		// save group relation
 		groupsManagerImpl.saveGroupRelation(sess, resultGroup, operandGroup, parentFlag);
 
+		List<Member> affectedMembers = getGroupMembers(sess, operandGroup);
+
+		Map<Member, MemberGroupStatus> previousStatuses = new HashMap<>();
+		for (Member affectedMember : affectedMembers) {
+			previousStatuses.put(affectedMember, getTotalMemberGroupStatus(sess, affectedMember, operandGroup));
+		}
+
 		// do the operation logic
 		try {
-			addRelationMembers(sess, resultGroup, getGroupMembers(sess, operandGroup), operandGroup.getId());
+			addRelationMembers(sess, resultGroup, affectedMembers, operandGroup.getId());
 		} catch(AlreadyMemberException ex) {
 			throw new ConsistencyErrorException("AlreadyMemberException caused by DB inconsistency.",ex);
 		}
 
 		// calculate new member-group statuses
-		for (Member member : getGroupMembers(sess, operandGroup)) {
-			recalculateMemberGroupStatusRecursively(sess, member, operandGroup);
+		for (Member member : affectedMembers) {
+			MemberGroupStatus previousStatus = previousStatuses.get(member);
+
+			recalculateMemberGroupStatusRecursively(sess, member, operandGroup, previousStatus);
 		}
 
 		return resultGroup;
@@ -4722,6 +4738,11 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 	public void removeGroupUnion(PerunSession sess, Group resultGroup, Group operandGroup, boolean parentFlag) throws GroupRelationDoesNotExist, GroupRelationCannotBeRemoved, GroupNotExistsException {
 		if (!groupsManagerImpl.isOneWayRelationBetweenGroups(resultGroup, operandGroup)) {
 			throw new GroupRelationDoesNotExist("Union does not exist between result group " + resultGroup + " and operand group" + operandGroup + ".");
+		}
+
+		Map<Member, MemberGroupStatus> previousStatuses = new HashMap<>();
+		for (Member affectedMember : getGroupMembers(sess, resultGroup)) {
+			previousStatuses.put(affectedMember, getTotalMemberGroupStatus(sess, affectedMember, resultGroup));
 		}
 
 		if (parentFlag || groupsManagerImpl.isRelationRemovable(sess, resultGroup, operandGroup)) {
@@ -4741,7 +4762,9 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 
 		// recalculates statuses of members in result group
 		for (Member member : getGroupMembers(sess, resultGroup)) {
-			recalculateMemberGroupStatusRecursively(sess, member, resultGroup);
+			MemberGroupStatus previousStatus = previousStatuses.get(member);
+
+			recalculateMemberGroupStatusRecursively(sess, member, resultGroup, previousStatus);
 		}
 	}
 
@@ -4939,7 +4962,8 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 		// expire in given group
 		groupsManagerImpl.setDirectGroupStatus(sess, member, group, MemberGroupStatus.EXPIRED);
 
-		recalculateMemberGroupStatusRecursively(sess, member, group);
+		MemberGroupStatus previousStatusIndirect = getTotalMemberGroupStatus(sess, member, group);
+		recalculateMemberGroupStatusRecursively(sess, member, group, previousStatusIndirect);
 	}
 
 	@Override
@@ -4966,7 +4990,8 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 		// validate member in given group
 		groupsManagerImpl.setDirectGroupStatus(sess, member, group, MemberGroupStatus.VALID);
 
-		recalculateMemberGroupStatusRecursively(sess, member, group);
+		MemberGroupStatus previousStatusIndirect = getTotalMemberGroupStatus(sess, member, group);
+		recalculateMemberGroupStatusRecursively(sess, member, group, previousStatusIndirect);
 	}
 
 
@@ -4987,10 +5012,11 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 	 *
 	 * @param member member
 	 * @param group group
+	 * @param previousStatus previousStatus
 	 * @throws InternalErrorException internal error
 	 */
 	@Override
-	public void recalculateMemberGroupStatusRecursively(PerunSession sess, Member member, Group group) {
+	public void recalculateMemberGroupStatusRecursively(PerunSession sess, Member member, Group group, MemberGroupStatus previousStatus) {
 
 		if (member == null) {
 			throw new InternalErrorException("Member, which should be checked, can not be null.");
@@ -5017,20 +5043,29 @@ public class GroupsManagerBlImpl implements GroupsManagerBl {
 		// get all possibly affected groups and member's statuses for them
 		List<Group> affectedGroups = new ArrayList<>(groupsManagerImpl.getResultGroups(sess, group.getId()));
 
+		Map<Group, MemberGroupStatus> previousStatuses = new HashMap<>();
+		for (Group affectedGroup : affectedGroups) {
+			previousStatuses.put(affectedGroup, getTotalMemberGroupStatus(sess, member, affectedGroup));
+		}
+
 		// if the new status is not null, update statuses received from the group to other groups
 		if (saveStatuses) {
 			groupsManagerImpl.setIndirectGroupStatus(sess, member, group, newStatus);
 
-			if (newStatus.equals(MemberGroupStatus.EXPIRED)) {
-				getPerunBl().getAuditer().log(sess, new MemberExpiredInGroup(member, group));
-			} else if (newStatus.equals(MemberGroupStatus.VALID)) {
-				getPerunBl().getAuditer().log(sess, new MemberValidatedInGroup(member, group));
+			if (!newStatus.equals(previousStatus)) {
+				if (newStatus.equals(MemberGroupStatus.EXPIRED)) {
+					getPerunBl().getAuditer().log(sess, new MemberExpiredInGroup(member, group));
+				} else if (newStatus.equals(MemberGroupStatus.VALID)) {
+					getPerunBl().getAuditer().log(sess, new MemberValidatedInGroup(member, group));
+				}
 			}
 		}
 
 		// check recursively all parent groups
 		for (Group affectedGroup : affectedGroups) {
-			recalculateMemberGroupStatusRecursively(sess, member, affectedGroup);
+			MemberGroupStatus previousStatusInAffectedGroup = previousStatuses.get(affectedGroup);
+
+			recalculateMemberGroupStatusRecursively(sess, member, affectedGroup, previousStatusInAffectedGroup);
 		}
 	}
 
